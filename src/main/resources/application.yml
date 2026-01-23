@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: service-batch
+  profiles:
+    active: local
+    group:
+      local: local
+      test: test
+      dev: dev
+      prod: prod
+      prod-backup: prod-backup
+  devtools:
+    livereload:
+      enabled: false
+    restart:
+      enabled: false
+      log-condition-evaluation-delta: false
+  jpa:
+#    database: mysql
+#    database-platform: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
+#    properties:
+#      hibernate:
+#        dialect: org.hibernate.dialect.MySQLDialect
+  servlet:
+    multipart:
+      maxFileSize: 100MB
+      maxRequestSize: 100MB
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      FAIL_ON_EMPTY_BEANS: false
+  data:
+    redis:
+      repositories:
+        enabled: false
+    jpa:
+      repositories:
+        enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+  health:
+    defaults:
+      enabled: true
+    redis:
+      enabled: false  # Redis 헬스체크만 비활성화
+  # Micrometer 메트릭 설정
+  metrics:
+    enable:
+      jvm: true
+      system: true
+      web: true
+      tomcat: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
