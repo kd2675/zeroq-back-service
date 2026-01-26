@@ -1,6 +1,6 @@
 spring:
   application:
-    name: service-batch
+    name: zeroq-service-back
   profiles:
     active: local
     group:
@@ -8,20 +8,22 @@ spring:
       test: test
       dev: dev
       prod: prod
-      prod-backup: prod-backup
   devtools:
     livereload:
       enabled: false
     restart:
       enabled: false
-      log-condition-evaluation-delta: false
   jpa:
-#    database: mysql
-#    database-platform: org.hibernate.dialect.MySQLDialect
     open-in-view: false
-#    properties:
-#      hibernate:
-#        dialect: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 20
+          fetch_size: 50
   servlet:
     multipart:
       maxFileSize: 100MB
@@ -31,12 +33,15 @@ spring:
     serialization:
       FAIL_ON_EMPTY_BEANS: false
   data:
-    redis:
-      repositories:
-        enabled: false
     jpa:
       repositories:
         enabled: false
+
+# JWT 설정
+jwt:
+  secret: lifespacesecretkeyforjwt256bitminimumlengthrequiredbitminimumlengthrequired
+  expiration: 86400000  # 24 hours in milliseconds
+  refresh-expiration: 604800000  # 7 days in milliseconds
 
 management:
   endpoints:
@@ -53,8 +58,6 @@ management:
   health:
     defaults:
       enabled: true
-    redis:
-      enabled: false  # Redis 헬스체크만 비활성화
   # Micrometer 메트릭 설정
   metrics:
     enable:

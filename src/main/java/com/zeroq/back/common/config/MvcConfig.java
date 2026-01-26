@@ -22,7 +22,7 @@ import java.util.List;
 @EnableWebMvc
 @Configuration
 @RequiredArgsConstructor
-@ComponentScan(basePackages = {"com.zeroq.core", "com.zeroq.back"})
+@ComponentScan(basePackages = {"com.zeroq.back"})
 public class MvcConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
