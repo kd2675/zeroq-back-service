@@ -50,8 +50,8 @@ spring:
 # JWT 설정
 jwt:
   secret: your-super-secret-key-change-this-in-production-12345-this-in-production-12345
-  expiration: 86400000  # 24 hours in milliseconds
-  refresh-expiration: 604800000  # 7 days in milliseconds
+  expiration: 3600000  # 1 hour in milliseconds
+  refresh-expiration: 1209600000  # 14 days in milliseconds
 
 eureka:
   client:

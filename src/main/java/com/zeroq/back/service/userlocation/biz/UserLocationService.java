@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import web.common.core.response.base.dto.ResponseDataDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,7 +41,8 @@ public class UserLocationService {
     @Transactional
     public UserLocationDTO createUserLocation(CreateUserLocationRequest request) {
         // 1. 사용자 존재 여부 확인 (auth-back-server 호출)
-        if (!userServiceClient.existsById(request.getUserId())) {
+        ResponseDataDTO<Boolean> existsResponse = userServiceClient.existsById(request.getUserId());
+        if (existsResponse == null || !Boolean.TRUE.equals(existsResponse.getData())) {
             throw new LiveSpaceException.ResourceNotFoundException(
                     "User", "id", request.getUserId());
         }
@@ -67,7 +69,7 @@ public class UserLocationService {
                 saved.getId(), saved.getUserId(), saved.getSpace().getId());
 
         // 4. 사용자 정보와 함께 DTO 반환
-        UserDto user = userServiceClient.getUserById(request.getUserId());
+        UserDto user = requireUser(userServiceClient.getUserById(request.getUserId()), "id", request.getUserId());
         return UserLocationDTO.from(saved, user);
     }
 
@@ -80,7 +82,7 @@ public class UserLocationService {
                         "UserLocation", "id", id));
 
         // UserServiceClient를 통해 사용자 정보 조회
-        UserDto user = userServiceClient.getUserById(userLocation.getUserId());
+        UserDto user = requireUser(userServiceClient.getUserById(userLocation.getUserId()), "id", userLocation.getUserId());
         return UserLocationDTO.from(userLocation, user);
     }
 
@@ -89,7 +91,7 @@ public class UserLocationService {
      */
     public Page<UserLocationDTO> getUserLocationsByUserId(Long userId, Pageable pageable) {
         // 사용자 정보 조회
-        UserDto user = userServiceClient.getUserById(userId);
+        UserDto user = requireUser(userServiceClient.getUserById(userId), "id", userId);
 
         // 위치 이력 조회
         Page<UserLocation> locations = userLocationRepository.findByUserIdOrderByVisitedAtDesc(userId, pageable);
@@ -103,7 +105,7 @@ public class UserLocationService {
      */
     public List<UserLocationDTO> getUserVisitsToSpace(Long userId, Long spaceId) {
         // 사용자 정보 조회
-        UserDto user = userServiceClient.getUserById(userId);
+        UserDto user = requireUser(userServiceClient.getUserById(userId), "id", userId);
 
         // 방문 이력 조회
         List<UserLocation> visits = userLocationRepository.findUserVisitsToSpace(userId, spaceId);
@@ -119,7 +121,7 @@ public class UserLocationService {
      */
     public List<UserLocationDTO> getUserLocationsAfter(Long userId, LocalDateTime startTime) {
         // 사용자 정보 조회
-        UserDto user = userServiceClient.getUserById(userId);
+        UserDto user = requireUser(userServiceClient.getUserById(userId), "id", userId);
 
         // 위치 이력 조회
         List<UserLocation> locations = userLocationRepository.findUserLocationsAfter(userId, startTime);
@@ -135,5 +137,12 @@ public class UserLocationService {
      */
     public long countVisitsToSpace(Long spaceId) {
         return userLocationRepository.countVisitsToSpace(spaceId);
+    }
+
+    private UserDto requireUser(ResponseDataDTO<UserDto> response, String field, Object value) {
+        if (response == null || !Boolean.TRUE.equals(response.getSuccess()) || response.getData() == null) {
+            throw new LiveSpaceException.ResourceNotFoundException("User", field, value);
+        }
+        return response.getData();
     }
 }

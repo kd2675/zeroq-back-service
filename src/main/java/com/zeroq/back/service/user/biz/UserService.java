@@ -6,6 +6,7 @@ import com.zeroq.back.common.exception.LiveSpaceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import web.common.core.response.base.dto.ResponseDataDTO;
 
 /**
  * User Service
@@ -23,7 +24,8 @@ public class UserService {
      */
     public UserDto getUserById(Long userId) {
         try {
-            return userServiceClient.getUserById(userId);
+            ResponseDataDTO<UserDto> response = userServiceClient.getUserById(userId);
+            return requireUser(response, "id", userId);
         } catch (Exception e) {
             log.error("Failed to get user by id: {}", userId, e);
             throw new LiveSpaceException.ResourceNotFoundException("User", "id", userId);
@@ -35,7 +37,8 @@ public class UserService {
      */
     public UserDto getUserByUsername(String username) {
         try {
-            return userServiceClient.getUserByUsername(username);
+            ResponseDataDTO<UserDto> response = userServiceClient.getUserByUsername(username);
+            return requireUser(response, "username", username);
         } catch (Exception e) {
             log.error("Failed to get user by username: {}", username, e);
             throw new LiveSpaceException.ResourceNotFoundException("User", "username", username);
@@ -47,7 +50,8 @@ public class UserService {
      */
     public UserDto getUserByEmail(String email) {
         try {
-            return userServiceClient.getUserByEmail(email);
+            ResponseDataDTO<UserDto> response = userServiceClient.getUserByEmail(email);
+            return requireUser(response, "email", email);
         } catch (Exception e) {
             log.error("Failed to get user by email: {}", email, e);
             throw new LiveSpaceException.ResourceNotFoundException("User", "email", email);
@@ -59,10 +63,18 @@ public class UserService {
      */
     public boolean existsById(Long userId) {
         try {
-            return userServiceClient.existsById(userId);
+            ResponseDataDTO<Boolean> response = userServiceClient.existsById(userId);
+            return response != null && Boolean.TRUE.equals(response.getData());
         } catch (Exception e) {
             log.error("Failed to check user existence: {}", userId, e);
             return false;
         }
+    }
+
+    private UserDto requireUser(ResponseDataDTO<UserDto> response, String field, Object value) {
+        if (response == null || !Boolean.TRUE.equals(response.getSuccess()) || response.getData() == null) {
+            throw new LiveSpaceException.ResourceNotFoundException("User", field, value);
+        }
+        return response.getData();
     }
 }
