@@ -16,7 +16,7 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
 
     Page<Favorite> findByUserIdOrderByOrderAsc(Long userId, Pageable pageable);
 
-    @Query("SELECT f FROM Favorite f WHERE f.user.id = :userId ORDER BY f.order ASC")
+    @Query("SELECT f FROM Favorite f WHERE f.userId = :userId ORDER BY f.order ASC")
     Page<Favorite> findUserFavorites(@Param("userId") Long userId, Pageable pageable);
 
     long countByUserId(Long userId);

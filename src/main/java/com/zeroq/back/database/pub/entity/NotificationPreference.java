@@ -16,9 +16,8 @@ public class NotificationPreference extends CommonDateEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false, unique = true)
+    private Long userId;
 
     @Column(nullable = false)
     private boolean allNotificationsEnabled = true; // 모든 알림 활성화

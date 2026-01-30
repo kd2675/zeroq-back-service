@@ -5,8 +5,6 @@ import com.zeroq.back.database.pub.entity.Review;
 import com.zeroq.back.database.pub.repository.ReviewRepository;
 import com.zeroq.back.database.pub.entity.Space;
 import com.zeroq.back.database.pub.repository.SpaceRepository;
-import com.zeroq.back.database.pub.entity.User;
-import com.zeroq.back.database.pub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final SpaceRepository spaceRepository;
-    private final UserRepository userRepository;
 
     /**
      * 공간별 리뷰 조회
@@ -45,22 +42,19 @@ public class ReviewService {
         Space space = spaceRepository.findById(spaceId)
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Space", "id", spaceId));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("User", "id", userId));
-
         Review review = Review.builder()
                 .space(space)
-                .user(user)
+                .userId(userId)
                 .title(title)
                 .content(content)
                 .rating(rating)
                 .build();
 
         Review savedReview = reviewRepository.save(review);
-        
+
         // 공간 평점 업데이트
         updateSpaceRating(spaceId);
-        
+
         log.info("Review created: spaceId={}, userId={}", spaceId, userId);
         return savedReview;
     }
@@ -73,7 +67,7 @@ public class ReviewService {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Review", "id", reviewId));
 
-        if (!review.getUser().getId().equals(userId)) {
+        if (!review.getUserId().equals(userId)) {
             throw new LiveSpaceException.ForbiddenException("자신의 리뷰만 삭제할 수 있습니다");
         }
 
