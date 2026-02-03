@@ -25,7 +25,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/user-locations")
+@RequestMapping("/api/zeroq/v1/user-locations")
 @RequiredArgsConstructor
 public class UserLocationController {
     private final UserLocationService userLocationService;

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/spaces")
+@RequestMapping("/api/zeroq/v1/spaces")
 @RequiredArgsConstructor
 public class SpaceController {
     private final SpaceService spaceService;

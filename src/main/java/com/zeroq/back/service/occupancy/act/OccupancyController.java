@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/occupancy")
+@RequestMapping("/api/zeroq/v1/occupancy")
 @RequiredArgsConstructor
 public class OccupancyController {
     private final OccupancyService occupancyService;

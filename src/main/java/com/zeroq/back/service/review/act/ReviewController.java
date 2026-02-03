@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/reviews")
+@RequestMapping("/api/zeroq/v1/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
     private final ReviewService reviewService;
