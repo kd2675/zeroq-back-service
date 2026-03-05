@@ -8,6 +8,15 @@ ZeroQ 메인 REST API 서비스입니다. 공간(Spaces), 점유율(Occupancy), 
 - **인증 주체**: `auth-back-server`
 - **서비스 디스커버리**: Eureka 기본 활성화
 
+## 서비스 대상/역할 모델
+
+- `USER`: 일반 사용자 (클라이언트: `zeroq-front-service`)
+- `MANAGER`: 매장 중간관리자 (클라이언트: `zeroq-front-admin`)
+- `ADMIN`: 플랫폼 운영자 (최상위 운영 권한)
+
+역할 정보는 Gateway가 JWT에서 추출한 `X-User-Role` 헤더를 통해 전달하며,
+이 서비스는 `UserContext`로 해당 값을 사용합니다.
+
 ## 실행 프로필과 포트
 
 | 프로필 | 포트 | 설명 |
@@ -19,12 +28,9 @@ ZeroQ 메인 REST API 서비스입니다. 공간(Spaces), 점유율(Occupancy), 
 
 ## Base URL
 
-- **직접 호출(서비스 직행)**
-  - local/dev: `http://localhost:20180/api/v1`
-  - prod: `http://localhost:10180/api/v1`
-  - test: `http://localhost:30180/api/v1`
-- **게이트웨이 경유(cloud-back-server)**
-  - 로컬 기준: `http://localhost:8080/api/v1`
+- **게이트웨이 경유만 사용(cloud-back-server)**
+  - 로컬 기준: `http://localhost:8080/api/zeroq/v1`
+  - 정책: 클라이언트에서 서비스 직행 포트 호출 금지
 
 ## 인증 (JWT)
 
@@ -53,7 +59,7 @@ ZeroQ 메인 REST API 서비스입니다. 공간(Spaces), 점유율(Occupancy), 
 
 ## API 엔드포인트 개요
 
-### Spaces (`/api/v1/spaces`)
+### Spaces (`/api/zeroq/v1/spaces`)
 - `GET /spaces`
 - `GET /spaces/{id}`
 - `GET /spaces/category/{categoryId}`
@@ -63,35 +69,29 @@ ZeroQ 메인 REST API 서비스입니다. 공간(Spaces), 점유율(Occupancy), 
 - `PUT /spaces/{id}` (stubbed)
 - `DELETE /spaces/{id}`
 
-### Occupancy (`/api/v1/occupancy`)
+### Occupancy (`/api/zeroq/v1/occupancy`)
 - `GET /occupancy/spaces/{spaceId}`
 - `GET /occupancy/spaces/{spaceId}/history`
 - `GET /occupancy/spaces/{spaceId}/average`
 
-### Reviews (`/api/v1/reviews`)
+### Reviews (`/api/zeroq/v1/reviews`)
 - `GET /reviews/spaces/{spaceId}`
 - `GET /reviews/users/{userId}`
-- `POST /reviews/spaces/{spaceId}`
-- `DELETE /reviews/{reviewId}`
+- `POST /reviews/spaces/{spaceId}` (Gateway `UserContext` 기반)
+- `DELETE /reviews/{reviewId}` (Gateway `UserContext` 기반)
 - `GET /reviews/spaces/{spaceId}/rating`
 
-### Users (Proxy) (`/api/v1/users`)
-- `GET /users/{userId}`
-- `GET /users/username/{username}`
-- `GET /users/email/{email}`
-- `GET /users/{userId}/exists`
+### Favorites (`/api/zeroq/v1/favorites`)
+- `GET /favorites` (Gateway `UserContext` 기반)
+- `POST /favorites/{spaceId}` (Gateway `UserContext` 기반)
+- `DELETE /favorites/{spaceId}` (Gateway `UserContext` 기반)
 
-### Favorites (`/api/v1/favorites`)
-- `GET /favorites?userId={id}`
-- `POST /favorites/{spaceId}?userId={id}`
-- `DELETE /favorites/{spaceId}?userId={id}`
-
-### User Locations (`/api/v1/user-locations`)
+### User Locations (`/api/zeroq/v1/user-locations`)
 - `POST /user-locations`
 - `GET /user-locations/{id}`
-- `GET /user-locations/user/{userId}`
-- `GET /user-locations/user/{userId}/space/{spaceId}`
-- `GET /user-locations/user/{userId}/after`
+- `GET /user-locations/me`
+- `GET /user-locations/me/space/{spaceId}`
+- `GET /user-locations/me/after`
 - `GET /user-locations/space/{spaceId}/visits/count`
 
 ## 구성 파일
@@ -101,8 +101,30 @@ ZeroQ 메인 REST API 서비스입니다. 공간(Spaces), 점유율(Occupancy), 
 - `src/main/resources/application-dev.yml`
 - `src/main/resources/application-test.yml`
 - `src/main/resources/application-prod.yml`
+- `src/main/resources/db/ddl/zeroq_all.sql`
+- `src/main/resources/db/ddl/zeroq_data_reset_keep_users.sql`
+- `src/main/resources/db/seed/zeroq_content_seed.sql`
+
+## DB 스키마/시드 (Muse 스타일 디렉토리 정렬)
+
+- DDL 전체 생성: `src/main/resources/db/ddl/zeroq_all.sql`
+- 도메인 데이터 리셋: `src/main/resources/db/ddl/zeroq_data_reset_keep_users.sql`
+- 개발 시드: `src/main/resources/db/seed/zeroq_content_seed.sql`
+
+적용 순서:
+1. `zeroq_all.sql`
+2. `zeroq_content_seed.sql`
+
+초기화 후 재시드:
+1. `zeroq_data_reset_keep_users.sql`
+2. `zeroq_content_seed.sql`
+
+정책:
+- 사용자 계정의 원천 데이터는 `auth` DB/서버가 소유
+- ZeroQ 도메인은 `user_id`만 저장하여 인증 사용자와 연결
+- 모든 호출은 Gateway 경유(`UserContext`)를 전제로 동작
 
 ## 내부 의존성
 
 - `web-common-core` (공통 응답 DTO/유틸)
-- `auth-common-core` (Auth DTO/Feign 클라이언트)
+- `auth-common-core` (Gateway UserContext 연동)

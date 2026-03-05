@@ -17,9 +17,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateUserLocationRequest {
-    @NotNull(message = "User ID is required")
-    private Long userId;
-
     @NotNull(message = "Space ID is required")
     private Long spaceId;
 

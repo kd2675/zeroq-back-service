@@ -1,6 +1,8 @@
 package com.zeroq.back.service.user.act;
 
+import auth.common.core.context.UserContext;
 import web.common.core.response.base.dto.ResponseDataDTO;
+import com.zeroq.back.common.exception.LiveSpaceException;
 import com.zeroq.back.database.pub.dto.FavoriteDTO;
 import com.zeroq.back.database.pub.entity.Favorite;
 import com.zeroq.back.service.user.biz.FavoriteService;
@@ -21,13 +23,14 @@ public class FavoriteController {
 
     /**
      * 즐겨찾기 목록 조회
-     * GET /api/v1/favorites?userId=1&page=0&size=20
+     * GET /api/v1/favorites?page=0&size=20
      */
     @GetMapping
     public ResponseDataDTO<Page<FavoriteDTO>> getFavorites(
-            @RequestParam Long userId,
+            UserContext userContext,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+        Long userId = requireUserId(userContext);
         log.info("Get favorites: userId={}, page={}, size={}", userId, page, size);
 
         Pageable pageable = PageRequest.of(page, size);
@@ -47,14 +50,15 @@ public class FavoriteController {
 
     /**
      * 즐겨찾기 추가
-     * POST /api/v1/favorites/{spaceId}?userId=1
+     * POST /api/v1/favorites/{spaceId}
      */
     @PostMapping("/{spaceId}")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseDataDTO<FavoriteDTO> addFavorite(
             @PathVariable Long spaceId,
-            @RequestParam Long userId,
+            UserContext userContext,
             @RequestParam(required = false) String note) {
+        Long userId = requireUserId(userContext);
         log.info("Add favorite: userId={}, spaceId={}", userId, spaceId);
 
         Favorite favorite = favoriteService.addFavorite(userId, spaceId, note);
@@ -72,16 +76,24 @@ public class FavoriteController {
 
     /**
      * 즐겨찾기 제거
-     * DELETE /api/v1/favorites/{spaceId}?userId=1
+     * DELETE /api/v1/favorites/{spaceId}
      */
     @DeleteMapping("/{spaceId}")
     public ResponseDataDTO<Void> removeFavorite(
             @PathVariable Long spaceId,
-            @RequestParam Long userId) {
+            UserContext userContext) {
+        Long userId = requireUserId(userContext);
         log.info("Remove favorite: userId={}, spaceId={}", userId, spaceId);
 
         favoriteService.removeFavorite(userId, spaceId);
 
         return ResponseDataDTO.of(null, "즐겨찾기가 제거되었습니다");
+    }
+
+    private Long requireUserId(UserContext userContext) {
+        if (userContext == null || userContext.getUserId() == null) {
+            throw new LiveSpaceException.ForbiddenException("인증 사용자 정보가 없습니다");
+        }
+        return userContext.getUserId();
     }
 }

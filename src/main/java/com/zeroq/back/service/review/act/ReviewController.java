@@ -1,6 +1,8 @@
 package com.zeroq.back.service.review.act;
 
+import auth.common.core.context.UserContext;
 import web.common.core.response.base.dto.ResponseDataDTO;
+import com.zeroq.back.common.exception.LiveSpaceException;
 import com.zeroq.back.database.pub.dto.ReviewDTO;
 import com.zeroq.back.database.pub.entity.Review;
 import com.zeroq.back.service.review.biz.ReviewService;
@@ -83,16 +85,17 @@ public class ReviewController {
 
     /**
      * 리뷰 작성
-     * POST /api/v1/reviews/spaces/{spaceId}?userId=1
+     * POST /api/v1/reviews/spaces/{spaceId}
      */
     @PostMapping("/spaces/{spaceId}")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseDataDTO<ReviewDTO> createReview(
             @PathVariable Long spaceId,
-            @RequestParam Long userId,
+            UserContext userContext,
             @RequestParam String title,
             @RequestParam String content,
             @RequestParam int rating) {
+        Long userId = requireUserId(userContext);
         log.info("Create review: userId={}, spaceId={}, rating={}", userId, spaceId, rating);
 
         Review review = reviewService.createReview(spaceId, userId, title, content, rating);
@@ -120,7 +123,8 @@ public class ReviewController {
     @DeleteMapping("/{reviewId}")
     public ResponseDataDTO<Void> deleteReview(
             @PathVariable Long reviewId,
-            @RequestParam Long userId) {
+            UserContext userContext) {
+        Long userId = requireUserId(userContext);
         log.info("Delete review: reviewId={}, userId={}", reviewId, userId);
 
         reviewService.deleteReview(reviewId, userId);
@@ -139,5 +143,12 @@ public class ReviewController {
         Double averageRating = reviewService.getAverageRating(spaceId);
 
         return ResponseDataDTO.of(averageRating, "평균 평점 조회 성공");
+    }
+
+    private Long requireUserId(UserContext userContext) {
+        if (userContext == null || userContext.getUserId() == null) {
+            throw new LiveSpaceException.ForbiddenException("인증 사용자 정보가 없습니다");
+        }
+        return userContext.getUserId();
     }
 }
