@@ -1,11 +1,12 @@
 # zeroq-back-service
 
-ZeroQ 핵심 비즈니스 API입니다. 공간 조회, 혼잡도, 리뷰, 즐겨찾기, 사용자 위치 기록을 제공하며 인증은 `auth-back-server`, 진입은 `cloud-back-server`를 전제로 합니다.
+ZeroQ 핵심 비즈니스 API입니다. 공간 조회, 혼잡도, 리뷰, 즐겨찾기, 사용자 위치 기록과 센서 통합 브리지 API(`space-sensors`)를 제공합니다. 인증은 `auth-back-server`, 진입은 `cloud-back-server`를 전제로 합니다.
 
 ## 역할
 
 - `zeroq-front-service`와 `zeroq-front-admin`이 호출하는 메인 도메인 API
 - Gateway가 주입한 `UserContext` 기반 사용자 식별 처리
+- `zeroq-back-sensor`를 호출하는 센서 브리지 계층 제공
 - Eureka client, OpenFeign, JPA, Cache, Actuator 사용
 
 ## 주요 도메인
@@ -15,6 +16,7 @@ ZeroQ 핵심 비즈니스 API입니다. 공간 조회, 혼잡도, 리뷰, 즐겨
 - `review`: 공간 리뷰 조회/작성/삭제, 평점 집계
 - `favorite`: 사용자 즐겨찾기 조회/등록/삭제
 - `userlocation`: 사용자 위치 기록과 방문 카운트
+- `space-sensors`: 공간 센서 오버뷰, 센서 등록/설치/상태변경, 명령 생성, 사용자 스냅샷 조회
 
 ## API 베이스 경로
 
@@ -23,6 +25,7 @@ ZeroQ 핵심 비즈니스 API입니다. 공간 조회, 혼잡도, 리뷰, 즐겨
 - `/api/zeroq/v1/reviews`
 - `/api/zeroq/v1/favorites`
 - `/api/zeroq/v1/user-locations`
+- `/api/zeroq/v1/space-sensors`
 
 클라이언트는 서비스 포트를 직접 호출하지 않고 Gateway를 통해 `http://localhost:8080/api/zeroq/v1/**`로 접근하는 것이 기준입니다.
 
@@ -56,6 +59,14 @@ ZeroQ 핵심 비즈니스 API입니다. 공간 조회, 혼잡도, 리뷰, 즐겨
 - 전체 DDL: `src/main/resources/db/ddl/zeroq_all.sql`
 - 데이터 리셋: `src/main/resources/db/ddl/zeroq_data_reset_keep_users.sql`
 - 개발 시드: `src/main/resources/db/seed/zeroq_content_seed.sql`
+
+## 센서 브리지 설정
+
+```bash
+ZEROQ_SENSOR_BRIDGE_BASE_URL=http://localhost:20181
+ZEROQ_SENSOR_BRIDGE_CONNECT_TIMEOUT_MS=3000
+ZEROQ_SENSOR_BRIDGE_READ_TIMEOUT_MS=7000
+```
 
 ## 참고
 

@@ -88,3 +88,10 @@ management:
     distribution:
       percentiles-histogram:
         http.server.requests: true
+
+zeroq:
+  sensor:
+    bridge:
+      base-url: ${ZEROQ_SENSOR_BRIDGE_BASE_URL:http://localhost:20181}
+      connect-timeout-ms: ${ZEROQ_SENSOR_BRIDGE_CONNECT_TIMEOUT_MS:3000}
+      read-timeout-ms: ${ZEROQ_SENSOR_BRIDGE_READ_TIMEOUT_MS:7000}
