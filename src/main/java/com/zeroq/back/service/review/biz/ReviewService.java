@@ -30,21 +30,21 @@ public class ReviewService {
     /**
      * 사용자별 리뷰 조회
      */
-    public Page<Review> getReviewsByUser(Long userId, Pageable pageable) {
-        return reviewRepository.findByUserIdAndDeletedFalseOrderByCreateDateDesc(userId, pageable);
+    public Page<Review> getReviewsByUser(String userKey, Pageable pageable) {
+        return reviewRepository.findByUserKeyAndDeletedFalseOrderByCreateDateDesc(userKey, pageable);
     }
 
     /**
      * 리뷰 작성
      */
     @Transactional
-    public Review createReview(Long spaceId, Long userId, String title, String content, int rating) {
+    public Review createReview(Long spaceId, String userKey, String title, String content, int rating) {
         Space space = spaceRepository.findById(spaceId)
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Space", "id", spaceId));
 
         Review review = Review.builder()
                 .space(space)
-                .userId(userId)
+                .userKey(userKey)
                 .title(title)
                 .content(content)
                 .rating(rating)
@@ -55,7 +55,7 @@ public class ReviewService {
         // 공간 평점 업데이트
         updateSpaceRating(spaceId);
 
-        log.info("Review created: spaceId={}, userId={}", spaceId, userId);
+        log.info("Review created: spaceId={}, userKey={}", spaceId, userKey);
         return savedReview;
     }
 
@@ -63,11 +63,11 @@ public class ReviewService {
      * 리뷰 삭제
      */
     @Transactional
-    public void deleteReview(Long reviewId, Long userId) {
+    public void deleteReview(Long reviewId, String userKey) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Review", "id", reviewId));
 
-        if (!review.getUserId().equals(userId)) {
+        if (!review.getUserKey().equals(userKey)) {
             throw new LiveSpaceException.ForbiddenException("자신의 리뷰만 삭제할 수 있습니다");
         }
 

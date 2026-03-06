@@ -6,7 +6,7 @@ import lombok.*;
 
 @Entity
 @Table(name = "user_behavior", indexes = {
-        @Index(name = "idx_user_id", columnList = "user_id")
+        @Index(name = "idx_user_key", columnList = "user_key")
 })
 @Getter
 @Setter
@@ -18,8 +18,8 @@ public class UserBehavior extends CommonDateEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(name = "user_key", nullable = false)
+    private String userKey;
 
     @Column(nullable = false)
     private int totalVisits; // 방문 횟수

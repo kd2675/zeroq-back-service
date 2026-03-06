@@ -7,7 +7,7 @@ import lombok.*;
 @Entity
 @Table(name = "review", indexes = {
         @Index(name = "idx_space_id_created_at", columnList = "space_id,created_at"),
-        @Index(name = "idx_user_id", columnList = "user_id")
+        @Index(name = "idx_user_key", columnList = "user_key")
 })
 @Getter
 @Setter
@@ -23,8 +23,8 @@ public class Review extends CommonDateEntity {
     @JoinColumn(name = "space_id", nullable = false)
     private Space space;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(name = "user_key", nullable = false)
+    private String userKey;
 
     @Column(nullable = false)
     private int rating; // 별점 (1-5)

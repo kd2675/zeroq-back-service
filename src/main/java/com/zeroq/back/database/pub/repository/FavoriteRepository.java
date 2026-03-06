@@ -12,12 +12,12 @@ import java.util.Optional;
 
 @Repository
 public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
-    Optional<Favorite> findByUserIdAndSpaceId(Long userId, Long spaceId);
+    Optional<Favorite> findByUserKeyAndSpaceId(String userKey, Long spaceId);
 
-    Page<Favorite> findByUserIdOrderByOrderAsc(Long userId, Pageable pageable);
+    Page<Favorite> findByUserKeyOrderByOrderAsc(String userKey, Pageable pageable);
 
-    @Query("SELECT f FROM Favorite f WHERE f.userId = :userId ORDER BY f.order ASC")
-    Page<Favorite> findUserFavorites(@Param("userId") Long userId, Pageable pageable);
+    @Query("SELECT f FROM Favorite f WHERE f.userKey = :userKey ORDER BY f.order ASC")
+    Page<Favorite> findUserFavorites(@Param("userKey") String userKey, Pageable pageable);
 
-    long countByUserId(Long userId);
+    long countByUserKey(String userKey);
 }

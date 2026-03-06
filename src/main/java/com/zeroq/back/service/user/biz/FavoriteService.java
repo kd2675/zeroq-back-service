@@ -23,26 +23,26 @@ public class FavoriteService {
     /**
      * 즐겨찾기 목록 조회
      */
-    public Page<Favorite> getFavorites(Long userId, Pageable pageable) {
-        return favoriteRepository.findUserFavorites(userId, pageable);
+    public Page<Favorite> getFavorites(String userKey, Pageable pageable) {
+        return favoriteRepository.findUserFavorites(userKey, pageable);
     }
 
     /**
      * 즐겨찾기 추가
      */
     @Transactional
-    public Favorite addFavorite(Long userId, Long spaceId, String note) {
+    public Favorite addFavorite(String userKey, Long spaceId, String note) {
         Space space = spaceRepository.findById(spaceId)
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Space", "id", spaceId));
 
         // 이미 즐겨찾기된 경우
-        if (favoriteRepository.findByUserIdAndSpaceId(userId, spaceId).isPresent()) {
+        if (favoriteRepository.findByUserKeyAndSpaceId(userKey, spaceId).isPresent()) {
             throw new LiveSpaceException.ConflictException("이미 즐겨찾기된 공간입니다");
         }
 
-        long favoritesCount = favoriteRepository.countByUserId(userId);
+        long favoritesCount = favoriteRepository.countByUserKey(userKey);
         Favorite favorite = Favorite.builder()
-                .userId(userId)
+                .userKey(userKey)
                 .space(space)
                 .order((int) (favoritesCount + 1))
                 .note(note)
@@ -55,23 +55,23 @@ public class FavoriteService {
      * 즐겨찾기 제거
      */
     @Transactional
-    public void removeFavorite(Long userId, Long spaceId) {
-        Favorite favorite = favoriteRepository.findByUserIdAndSpaceId(userId, spaceId)
+    public void removeFavorite(String userKey, Long spaceId) {
+        Favorite favorite = favoriteRepository.findByUserKeyAndSpaceId(userKey, spaceId)
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Favorite", "spaceId", spaceId));
 
         favoriteRepository.delete(favorite);
-        log.info("Favorite removed: userId={}, spaceId={}", userId, spaceId);
+        log.info("Favorite removed: userKey={}, spaceId={}", userKey, spaceId);
     }
 
     /**
      * 즐겨찾기 순서 변경
      */
     @Transactional
-    public void reorderFavorites(Long userId, Long favoriteId, int newOrder) {
+    public void reorderFavorites(String userKey, Long favoriteId, int newOrder) {
         Favorite favorite = favoriteRepository.findById(favoriteId)
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Favorite", "id", favoriteId));
 
-        if (!favorite.getUserId().equals(userId)) {
+        if (!favorite.getUserKey().equals(userKey)) {
             throw new LiveSpaceException.ForbiddenException("다른 사용자의 즐겨찾기를 수정할 수 없습니다");
         }
 

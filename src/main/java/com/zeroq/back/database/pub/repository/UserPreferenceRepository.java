@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface UserPreferenceRepository extends JpaRepository<UserPreference, Long> {
-    Optional<UserPreference> findByUserIdAndPreferenceKey(Long userId, String preferenceKey);
+    Optional<UserPreference> findByUserKeyAndPreferenceKey(String userKey, String preferenceKey);
 
-    List<UserPreference> findByUserId(Long userId);
+    List<UserPreference> findByUserKey(String userKey);
 }

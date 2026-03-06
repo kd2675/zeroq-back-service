@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_location", indexes = {
-        @Index(name = "idx_user_id_space_id", columnList = "user_id,space_id"),
+        @Index(name = "idx_user_key_space_id", columnList = "user_key,space_id"),
         @Index(name = "idx_visited_at", columnList = "visited_at")
 })
 @Getter
@@ -21,8 +21,8 @@ public class UserLocation extends CommonDateEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(name = "user_key", nullable = false)
+    private String userKey;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "space_id", nullable = false)

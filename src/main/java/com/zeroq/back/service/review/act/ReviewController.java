@@ -39,7 +39,7 @@ public class ReviewController {
                 .id(r.getId())
                 .spaceId(r.getSpace().getId())
                 .spaceName(r.getSpace().getName())
-                .userId(r.getUserId())
+                .userKey(r.getUserKey())
                 .userName("")
                 .rating(r.getRating())
                 .title(r.getTitle())
@@ -54,23 +54,23 @@ public class ReviewController {
 
     /**
      * 사용자별 리뷰 조회
-     * GET /api/v1/reviews/users/{userId}?page=0&size=20
+     * GET /api/v1/reviews/users/{userKey}?page=0&size=20
      */
-    @GetMapping("/users/{userId}")
+    @GetMapping("/users/{userKey}")
     public ResponseDataDTO<Page<ReviewDTO>> getReviewsByUser(
-            @PathVariable Long userId,
+            @PathVariable String userKey,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        log.info("Get reviews by user: userId={}, page={}, size={}", userId, page, size);
+        log.info("Get reviews by user: userKey={}, page={}, size={}", userKey, page, size);
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<Review> reviews = reviewService.getReviewsByUser(userId, pageable);
+        Page<Review> reviews = reviewService.getReviewsByUser(userKey, pageable);
 
         Page<ReviewDTO> dtos = reviews.map(r -> ReviewDTO.builder()
                 .id(r.getId())
                 .spaceId(r.getSpace().getId())
                 .spaceName(r.getSpace().getName())
-                .userId(r.getUserId())
+                .userKey(r.getUserKey())
                 .userName("")
                 .rating(r.getRating())
                 .title(r.getTitle())
@@ -95,15 +95,15 @@ public class ReviewController {
             @RequestParam String title,
             @RequestParam String content,
             @RequestParam int rating) {
-        Long userId = requireUserId(userContext);
-        log.info("Create review: userId={}, spaceId={}, rating={}", userId, spaceId, rating);
+        String userKey = requireUserKey(userContext);
+        log.info("Create review: userKey={}, spaceId={}, rating={}", userKey, spaceId, rating);
 
-        Review review = reviewService.createReview(spaceId, userId, title, content, rating);
+        Review review = reviewService.createReview(spaceId, userKey, title, content, rating);
         ReviewDTO dto = ReviewDTO.builder()
                 .id(review.getId())
                 .spaceId(review.getSpace().getId())
                 .spaceName(review.getSpace().getName())
-                .userId(review.getUserId())
+                .userKey(review.getUserKey())
                 .userName("")
                 .rating(review.getRating())
                 .title(review.getTitle())
@@ -124,10 +124,10 @@ public class ReviewController {
     public ResponseDataDTO<Void> deleteReview(
             @PathVariable Long reviewId,
             UserContext userContext) {
-        Long userId = requireUserId(userContext);
-        log.info("Delete review: reviewId={}, userId={}", reviewId, userId);
+        String userKey = requireUserKey(userContext);
+        log.info("Delete review: reviewId={}, userKey={}", reviewId, userKey);
 
-        reviewService.deleteReview(reviewId, userId);
+        reviewService.deleteReview(reviewId, userKey);
 
         return ResponseDataDTO.of(null, "리뷰가 삭제되었습니다");
     }
@@ -145,10 +145,10 @@ public class ReviewController {
         return ResponseDataDTO.of(averageRating, "평균 평점 조회 성공");
     }
 
-    private Long requireUserId(UserContext userContext) {
-        if (userContext == null || userContext.getUserId() == null) {
+    private String requireUserKey(UserContext userContext) {
+        if (userContext == null || userContext.getUserKey() == null) {
             throw new LiveSpaceException.ForbiddenException("인증 사용자 정보가 없습니다");
         }
-        return userContext.getUserId();
+        return userContext.getUserKey();
     }
 }

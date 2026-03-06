@@ -15,7 +15,7 @@ public class ReviewDTO {
     private Long id;
     private Long spaceId;
     private String spaceName;
-    private Long userId;
+    private String userKey;
     private String userName;
     private int rating;
     private String title;

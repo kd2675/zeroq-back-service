@@ -1,4 +1,4 @@
--- Seed data for ZeroQ (userId-key strategy)
+-- Seed data for ZeroQ (userKey-key strategy)
 -- Generated: 2026-03-04
 
 USE ZEROQ;
@@ -7,7 +7,7 @@ USE ZEROQ;
 -- User profile projection (mapped from auth user IDs)
 -- ============================================================
 INSERT INTO profile_user (
-    user_id, display_name, tagline, profile_color, create_date, update_date
+    user_key, display_name, tagline, profile_color, create_date, update_date
 ) VALUES
     (1001, '민지', '한적한 카페를 찾는 탐색가', '#4CAF50', NOW(), NOW()),
     (1002, '준호', '핫플 탐방 전문', '#FF1744', NOW(), NOW()),
@@ -134,36 +134,36 @@ INSERT INTO low_battery_alert (
     (1, 3, 19.0, 'CRITICAL', 0, NULL, '교체 필요', NOW(), NOW());
 
 -- ============================================================
--- UserId-key domain data
+-- UserKey-key domain data
 -- ============================================================
 INSERT INTO favorite (
-    id, user_id, space_id, order_num, note, create_date, update_date
+    id, user_key, space_id, order_num, note, create_date, update_date
 ) VALUES
     (1, 1001, 101, 1, '출근 전 체크용', NOW(), NOW()),
     (2, 1001, 102, 2, '회의 전 확인', NOW(), NOW()),
     (3, 1002, 102, 1, '핫플 체크', NOW(), NOW());
 
 INSERT INTO review (
-    id, space_id, user_id, rating, title, content, like_count, verified, deleted, admin_reply, create_date, update_date
+    id, space_id, user_key, rating, title, content, like_count, verified, deleted, admin_reply, create_date, update_date
 ) VALUES
     (1, 101, 1001, 5, '아침 시간 최고', '오전 10시 이전에 가면 정말 여유롭습니다.', 3, 1, 0, NULL, NOW(), NOW()),
     (2, 102, 1002, 4, '점심엔 붐빔', '좌석은 좋지만 점심 시간대는 대기 필요.', 8, 1, 0, '혼잡 시간 안내 강화 예정입니다.', NOW(), NOW());
 
 INSERT INTO user_location (
-    id, user_id, space_id, visited_at, left_at, duration_minutes, latitude, longitude, note, create_date, update_date
+    id, user_key, space_id, visited_at, left_at, duration_minutes, latitude, longitude, note, create_date, update_date
 ) VALUES
     (1, 1001, 101, NOW(), NOW(), 55, 37.497942, 127.027621, '업무 미팅', NOW(), NOW()),
     (2, 1002, 102, NOW(), NOW(), 40, 37.500102, 127.036231, '점심 방문', NOW(), NOW());
 
 INSERT INTO user_behavior (
-    id, user_id, total_visits, favorites_count, reviews_count, preferred_time_hour,
+    id, user_key, total_visits, favorites_count, reviews_count, preferred_time_hour,
     preferred_category_id, average_occupancy_preference, note, create_date, update_date
 ) VALUES
     (1, 1001, 42, 2, 1, 10, 'cafe', 22.0, '한산 시간 선호', NOW(), NOW()),
     (2, 1002, 31, 1, 1, 13, 'cafe', 71.0, '핫플 선호', NOW(), NOW());
 
 INSERT INTO user_preference (
-    id, user_id, preference_key, preference_value, description, create_date, update_date
+    id, user_key, preference_key, preference_value, description, create_date, update_date
 ) VALUES
     (1, 1001, 'theme', 'light', '기본 테마', NOW(), NOW()),
     (2, 1001, 'distance_unit', 'km', '거리 단위', NOW(), NOW()),
@@ -171,7 +171,7 @@ INSERT INTO user_preference (
     (4, 1003, 'notification_enabled', 'true', '알림 사용', NOW(), NOW());
 
 INSERT INTO notification_preference (
-    id, user_id, all_notifications_enabled, occupancy_notifications_enabled, battery_notifications_enabled,
+    id, user_key, all_notifications_enabled, occupancy_notifications_enabled, battery_notifications_enabled,
     review_notifications_enabled, promotion_notifications_enabled, email_notifications_enabled,
     push_notifications_enabled, sms_notifications_enabled, create_date, update_date
 ) VALUES
@@ -180,7 +180,7 @@ INSERT INTO notification_preference (
     (3, 1003, 1, 1, 0, 1, 1, 1, 1, 0, NOW(), NOW());
 
 INSERT INTO notification (
-    id, user_id, title, message, type, read_yn, related_entity_id, related_entity_type, create_date, update_date
+    id, user_key, title, message, type, read_yn, related_entity_id, related_entity_type, create_date, update_date
 ) VALUES
     (1, 1001, 'ZeroQ 알림', '스타벅스 강남점이 ZeroQ 상태입니다.', 'SPACE_OCCUPANCY', 0, '101', 'SPACE', NOW(), NOW()),
     (2, 1002, 'HotQ 알림', '블루보틀 역삼점이 혼잡 상태입니다.', 'SPACE_OCCUPANCY', 0, '102', 'SPACE', NOW(), NOW()),

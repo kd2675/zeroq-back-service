@@ -16,8 +16,8 @@ public class UserPreference extends CommonDateEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(name = "user_key", nullable = false)
+    private String userKey;
 
     @Column(nullable = false, length = 50)
     private String preferenceKey; // 선호도 키

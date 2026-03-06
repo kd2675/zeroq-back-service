@@ -6,7 +6,7 @@ import lombok.*;
 
 @Entity
 @Table(name = "favorite", indexes = {
-        @Index(name = "idx_user_id_space_id", columnList = "user_id,space_id", unique = true)
+        @Index(name = "idx_user_key_space_id", columnList = "user_key,space_id", unique = true)
 })
 @Getter
 @Setter
@@ -18,8 +18,8 @@ public class Favorite extends CommonDateEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(name = "user_key", nullable = false)
+    private String userKey;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "space_id", nullable = false)

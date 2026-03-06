@@ -30,11 +30,11 @@ public class FavoriteController {
             UserContext userContext,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Long userId = requireUserId(userContext);
-        log.info("Get favorites: userId={}, page={}, size={}", userId, page, size);
+        String userKey = requireUserKey(userContext);
+        log.info("Get favorites: userKey={}, page={}, size={}", userKey, page, size);
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<Favorite> favorites = favoriteService.getFavorites(userId, pageable);
+        Page<Favorite> favorites = favoriteService.getFavorites(userKey, pageable);
 
         Page<FavoriteDTO> dtos = favorites.map(f -> FavoriteDTO.builder()
                 .id(f.getId())
@@ -58,10 +58,10 @@ public class FavoriteController {
             @PathVariable Long spaceId,
             UserContext userContext,
             @RequestParam(required = false) String note) {
-        Long userId = requireUserId(userContext);
-        log.info("Add favorite: userId={}, spaceId={}", userId, spaceId);
+        String userKey = requireUserKey(userContext);
+        log.info("Add favorite: userKey={}, spaceId={}", userKey, spaceId);
 
-        Favorite favorite = favoriteService.addFavorite(userId, spaceId, note);
+        Favorite favorite = favoriteService.addFavorite(userKey, spaceId, note);
         FavoriteDTO dto = FavoriteDTO.builder()
                 .id(favorite.getId())
                 .spaceId(favorite.getSpace().getId())
@@ -82,18 +82,18 @@ public class FavoriteController {
     public ResponseDataDTO<Void> removeFavorite(
             @PathVariable Long spaceId,
             UserContext userContext) {
-        Long userId = requireUserId(userContext);
-        log.info("Remove favorite: userId={}, spaceId={}", userId, spaceId);
+        String userKey = requireUserKey(userContext);
+        log.info("Remove favorite: userKey={}, spaceId={}", userKey, spaceId);
 
-        favoriteService.removeFavorite(userId, spaceId);
+        favoriteService.removeFavorite(userKey, spaceId);
 
         return ResponseDataDTO.of(null, "즐겨찾기가 제거되었습니다");
     }
 
-    private Long requireUserId(UserContext userContext) {
-        if (userContext == null || userContext.getUserId() == null) {
+    private String requireUserKey(UserContext userContext) {
+        if (userContext == null || userContext.getUserKey() == null) {
             throw new LiveSpaceException.ForbiddenException("인증 사용자 정보가 없습니다");
         }
-        return userContext.getUserId();
+        return userContext.getUserKey();
     }
 }

@@ -1,4 +1,4 @@
--- ZeroQ unified DDL (userId-key strategy, muse-style resource layout)
+-- ZeroQ unified DDL (userKey-key strategy, muse-style resource layout)
 -- Generated: 2026-03-04
 
 DROP SCHEMA IF EXISTS ZEROQ;
@@ -9,7 +9,7 @@ USE ZEROQ;
 -- User profile (domain-local projection of auth user)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS profile_user (
-    user_id BIGINT PRIMARY KEY,
+    user_key VARCHAR(64) PRIMARY KEY,
     display_name VARCHAR(100) NOT NULL,
     tagline VARCHAR(255) NULL,
     profile_color VARCHAR(20) NULL,
@@ -281,16 +281,16 @@ CREATE TABLE IF NOT EXISTS analytics_data (
 CREATE INDEX idx_analytics_data_space_created ON analytics_data (space_id, create_date);
 
 -- ============================================================
--- UserId-key domain tables (muse-style)
+-- UserKey-key domain tables (muse-style)
 -- NOTE:
---   - user_id is issued by auth server user table.
+--   - user_key is issued by auth server user table.
 --   - domain tables do not keep FK to auth DB.
 --   - profile_user is optional projection/read-model.
 -- ============================================================
 CREATE TABLE IF NOT EXISTS review (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     space_id BIGINT NOT NULL,
-    user_id BIGINT NOT NULL,
+    user_key VARCHAR(64) NOT NULL,
     rating INT NOT NULL,
     title VARCHAR(1000) NOT NULL,
     content TEXT NOT NULL,
@@ -304,23 +304,23 @@ CREATE TABLE IF NOT EXISTS review (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE INDEX idx_review_space_created ON review (space_id, create_date);
-CREATE INDEX idx_review_user ON review (user_id);
+CREATE INDEX idx_review_user ON review (user_key);
 
 CREATE TABLE IF NOT EXISTS favorite (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_key VARCHAR(64) NOT NULL,
     space_id BIGINT NOT NULL,
     order_num INT NOT NULL DEFAULT 0,
     note VARCHAR(500) NULL,
     create_date DATETIME NOT NULL,
     update_date DATETIME NOT NULL,
-    CONSTRAINT uk_favorite_user_space UNIQUE (user_id, space_id),
+    CONSTRAINT uk_favorite_user_space UNIQUE (user_key, space_id),
     CONSTRAINT fk_favorite_space FOREIGN KEY (space_id) REFERENCES space(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS user_location (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_key VARCHAR(64) NOT NULL,
     space_id BIGINT NOT NULL,
     visited_at DATETIME NOT NULL,
     left_at DATETIME NULL,
@@ -333,12 +333,12 @@ CREATE TABLE IF NOT EXISTS user_location (
     CONSTRAINT fk_user_location_space FOREIGN KEY (space_id) REFERENCES space(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_user_location_user_space ON user_location (user_id, space_id);
+CREATE INDEX idx_user_location_user_space ON user_location (user_key, space_id);
 CREATE INDEX idx_user_location_visited_at ON user_location (visited_at);
 
 CREATE TABLE IF NOT EXISTS user_behavior (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_key VARCHAR(64) NOT NULL,
     total_visits INT NOT NULL,
     favorites_count INT NOT NULL,
     reviews_count INT NOT NULL,
@@ -348,25 +348,25 @@ CREATE TABLE IF NOT EXISTS user_behavior (
     note VARCHAR(500) NULL,
     create_date DATETIME NOT NULL,
     update_date DATETIME NOT NULL,
-    CONSTRAINT uk_user_behavior_user UNIQUE (user_id)
+    CONSTRAINT uk_user_behavior_user UNIQUE (user_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_user_behavior_user_id ON user_behavior (user_id);
+CREATE INDEX idx_user_behavior_user_key ON user_behavior (user_key);
 
 CREATE TABLE IF NOT EXISTS user_preference (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_key VARCHAR(64) NOT NULL,
     preference_key VARCHAR(50) NOT NULL,
     preference_value VARCHAR(500) NOT NULL,
     description VARCHAR(500) NULL,
     create_date DATETIME NOT NULL,
     update_date DATETIME NOT NULL,
-    CONSTRAINT uk_user_preference_user_key UNIQUE (user_id, preference_key)
+    CONSTRAINT uk_user_preference_user_key UNIQUE (user_key, preference_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS notification_preference (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_key VARCHAR(64) NOT NULL,
     all_notifications_enabled TINYINT(1) NOT NULL DEFAULT 1,
     occupancy_notifications_enabled TINYINT(1) NOT NULL DEFAULT 1,
     battery_notifications_enabled TINYINT(1) NOT NULL DEFAULT 1,
@@ -377,12 +377,12 @@ CREATE TABLE IF NOT EXISTS notification_preference (
     sms_notifications_enabled TINYINT(1) NOT NULL DEFAULT 0,
     create_date DATETIME NOT NULL,
     update_date DATETIME NOT NULL,
-    CONSTRAINT uk_notification_preference_user UNIQUE (user_id)
+    CONSTRAINT uk_notification_preference_user UNIQUE (user_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS notification (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_key VARCHAR(64) NOT NULL,
     title VARCHAR(100) NOT NULL,
     message VARCHAR(500) NOT NULL,
     type VARCHAR(30) NOT NULL,
@@ -393,4 +393,4 @@ CREATE TABLE IF NOT EXISTS notification (
     update_date DATETIME NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_notification_user_created ON notification (user_id, create_date);
+CREATE INDEX idx_notification_user_created ON notification (user_key, create_date);

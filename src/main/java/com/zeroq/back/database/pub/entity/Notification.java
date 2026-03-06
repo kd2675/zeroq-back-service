@@ -6,7 +6,7 @@ import lombok.*;
 
 @Entity
 @Table(name = "notification", indexes = {
-        @Index(name = "idx_user_id_created_at", columnList = "user_id,created_at")
+        @Index(name = "idx_user_key_created_at", columnList = "user_key,created_at")
 })
 @Getter
 @Setter
@@ -18,8 +18,8 @@ public class Notification extends CommonDateEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(name = "user_key", nullable = false)
+    private String userKey;
 
     @Column(nullable = false, length = 100)
     private String title; // 제목

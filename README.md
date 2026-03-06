@@ -76,7 +76,7 @@ ZeroQ 메인 REST API 서비스입니다. 공간(Spaces), 점유율(Occupancy), 
 
 ### Reviews (`/api/zeroq/v1/reviews`)
 - `GET /reviews/spaces/{spaceId}`
-- `GET /reviews/users/{userId}`
+- `GET /reviews/users/{userKey}`
 - `POST /reviews/spaces/{spaceId}` (Gateway `UserContext` 기반)
 - `DELETE /reviews/{reviewId}` (Gateway `UserContext` 기반)
 - `GET /reviews/spaces/{spaceId}/rating`
@@ -121,7 +121,7 @@ ZeroQ 메인 REST API 서비스입니다. 공간(Spaces), 점유율(Occupancy), 
 
 정책:
 - 사용자 계정의 원천 데이터는 `auth` DB/서버가 소유
-- ZeroQ 도메인은 `user_id`만 저장하여 인증 사용자와 연결
+- ZeroQ 도메인은 `user_key`만 저장하여 인증 사용자와 연결
 - 모든 호출은 Gateway 경유(`UserContext`)를 전제로 동작
 
 ## 내부 의존성

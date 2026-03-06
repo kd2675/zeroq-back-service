@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 /**
  * UserLocation Service
  * - 사용자 위치 정보 관리
- * - Gateway가 전달한 인증 userId만 사용 (Muse 패턴)
+ * - Gateway가 전달한 인증 userKey만 사용 (Muse 패턴)
  */
 @Slf4j
 @Service
@@ -35,15 +35,15 @@ public class UserLocationService {
      * 사용자 위치 정보 생성
      */
     @Transactional
-    public UserLocationDTO createUserLocation(Long userId, CreateUserLocationRequest request) {
+    public UserLocationDTO createUserLocation(String userKey, CreateUserLocationRequest request) {
         // 1. 공간 존재 여부 확인
         Space space = spaceRepository.findById(request.getSpaceId())
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException(
                         "Space", "id", request.getSpaceId()));
 
-        // 2. UserLocation 생성 (인증된 userId 사용)
+        // 2. UserLocation 생성 (인증된 userKey 사용)
         UserLocation userLocation = UserLocation.builder()
-                .userId(userId)
+                .userKey(userKey)
                 .space(space)
                 .visitedAt(request.getVisitedAt())
                 .leftAt(request.getLeftAt())
@@ -54,8 +54,8 @@ public class UserLocationService {
                 .build();
 
         UserLocation saved = userLocationRepository.save(userLocation);
-        log.info("UserLocation created: id={}, userId={}, spaceId={}",
-                saved.getId(), saved.getUserId(), saved.getSpace().getId());
+        log.info("UserLocation created: id={}, userKey={}, spaceId={}",
+                saved.getId(), saved.getUserKey(), saved.getSpace().getId());
 
         return UserLocationDTO.from(saved);
     }
@@ -63,12 +63,12 @@ public class UserLocationService {
     /**
      * 사용자 위치 정보 조회 (본인 소유 검증)
      */
-    public UserLocationDTO getUserLocationById(Long userId, Long id) {
+    public UserLocationDTO getUserLocationById(String userKey, Long id) {
         UserLocation userLocation = userLocationRepository.findById(id)
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException(
                         "UserLocation", "id", id));
 
-        if (!userLocation.getUserId().equals(userId)) {
+        if (!userLocation.getUserKey().equals(userKey)) {
             throw new LiveSpaceException.ForbiddenException("본인 위치 정보만 조회할 수 있습니다");
         }
 
@@ -78,16 +78,16 @@ public class UserLocationService {
     /**
      * 내 위치 이력 조회
      */
-    public Page<UserLocationDTO> getMyUserLocations(Long userId, Pageable pageable) {
-        Page<UserLocation> locations = userLocationRepository.findByUserIdOrderByVisitedAtDesc(userId, pageable);
+    public Page<UserLocationDTO> getMyUserLocations(String userKey, Pageable pageable) {
+        Page<UserLocation> locations = userLocationRepository.findByUserKeyOrderByVisitedAtDesc(userKey, pageable);
         return locations.map(UserLocationDTO::from);
     }
 
     /**
      * 특정 공간에 대한 내 방문 이력 조회
      */
-    public List<UserLocationDTO> getMyVisitsToSpace(Long userId, Long spaceId) {
-        List<UserLocation> visits = userLocationRepository.findUserVisitsToSpace(userId, spaceId);
+    public List<UserLocationDTO> getMyVisitsToSpace(String userKey, Long spaceId) {
+        List<UserLocation> visits = userLocationRepository.findUserVisitsToSpace(userKey, spaceId);
         return visits.stream()
                 .map(UserLocationDTO::from)
                 .collect(Collectors.toList());
@@ -96,8 +96,8 @@ public class UserLocationService {
     /**
      * 특정 시간 이후 내 위치 이력 조회
      */
-    public List<UserLocationDTO> getMyLocationsAfter(Long userId, LocalDateTime startTime) {
-        List<UserLocation> locations = userLocationRepository.findUserLocationsAfter(userId, startTime);
+    public List<UserLocationDTO> getMyLocationsAfter(String userKey, LocalDateTime startTime) {
+        List<UserLocation> locations = userLocationRepository.findUserLocationsAfter(userKey, startTime);
         return locations.stream()
                 .map(UserLocationDTO::from)
                 .collect(Collectors.toList());

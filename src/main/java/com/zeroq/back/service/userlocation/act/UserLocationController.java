@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * UserLocation Controller
  * - 사용자 위치 정보 관리 API
- * - Muse와 동일하게 Gateway UserContext(userId) 기반으로 동작
+ * - Muse와 동일하게 Gateway UserContext(userKey) 기반으로 동작
  */
 @Slf4j
 @RestController
@@ -41,9 +41,9 @@ public class UserLocationController {
     public ResponseDataDTO<UserLocationDTO> createUserLocation(
             @Valid @RequestBody CreateUserLocationRequest request,
             UserContext userContext) {
-        Long userId = requireUserId(userContext);
-        log.info("Create user location: userId={}, spaceId={}", userId, request.getSpaceId());
-        UserLocationDTO dto = userLocationService.createUserLocation(userId, request);
+        String userKey = requireUserKey(userContext);
+        log.info("Create user location: userKey={}, spaceId={}", userKey, request.getSpaceId());
+        UserLocationDTO dto = userLocationService.createUserLocation(userKey, request);
         return ResponseDataDTO.of(dto, "사용자 위치 정보가 생성되었습니다");
     }
 
@@ -55,9 +55,9 @@ public class UserLocationController {
     public ResponseDataDTO<UserLocationDTO> getUserLocationById(
             @PathVariable Long id,
             UserContext userContext) {
-        Long userId = requireUserId(userContext);
-        log.info("Get my user location by id: userId={}, id={}", userId, id);
-        UserLocationDTO dto = userLocationService.getUserLocationById(userId, id);
+        String userKey = requireUserKey(userContext);
+        log.info("Get my user location by id: userKey={}, id={}", userKey, id);
+        UserLocationDTO dto = userLocationService.getUserLocationById(userKey, id);
         return ResponseDataDTO.of(dto, "사용자 위치 정보 조회 성공");
     }
 
@@ -70,9 +70,9 @@ public class UserLocationController {
             UserContext userContext,
             @PageableDefault(size = 20, sort = "visitedAt", direction = Sort.Direction.DESC)
             Pageable pageable) {
-        Long userId = requireUserId(userContext);
-        log.info("Get my locations: userId={}", userId);
-        Page<UserLocationDTO> page = userLocationService.getMyUserLocations(userId, pageable);
+        String userKey = requireUserKey(userContext);
+        log.info("Get my locations: userKey={}", userKey);
+        Page<UserLocationDTO> page = userLocationService.getMyUserLocations(userKey, pageable);
         return ResponseDataDTO.of(page, "사용자 위치 이력 조회 성공");
     }
 
@@ -84,9 +84,9 @@ public class UserLocationController {
     public ResponseDataDTO<List<UserLocationDTO>> getMyVisitsToSpace(
             UserContext userContext,
             @PathVariable Long spaceId) {
-        Long userId = requireUserId(userContext);
-        log.info("Get user visits to space: userId={}, spaceId={}", userId, spaceId);
-        List<UserLocationDTO> visits = userLocationService.getMyVisitsToSpace(userId, spaceId);
+        String userKey = requireUserKey(userContext);
+        log.info("Get user visits to space: userKey={}, spaceId={}", userKey, spaceId);
+        List<UserLocationDTO> visits = userLocationService.getMyVisitsToSpace(userKey, spaceId);
         return ResponseDataDTO.of(visits, "공간 방문 이력 조회 성공");
     }
 
@@ -98,9 +98,9 @@ public class UserLocationController {
     public ResponseDataDTO<List<UserLocationDTO>> getMyLocationsAfter(
             UserContext userContext,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime) {
-        Long userId = requireUserId(userContext);
-        log.info("Get user locations after: userId={}, startTime={}", userId, startTime);
-        List<UserLocationDTO> locations = userLocationService.getMyLocationsAfter(userId, startTime);
+        String userKey = requireUserKey(userContext);
+        log.info("Get user locations after: userKey={}, startTime={}", userKey, startTime);
+        List<UserLocationDTO> locations = userLocationService.getMyLocationsAfter(userKey, startTime);
         return ResponseDataDTO.of(locations, "사용자 위치 이력 조회 성공");
     }
 
@@ -115,10 +115,10 @@ public class UserLocationController {
         return ResponseDataDTO.of(count, "공간 방문 횟수 조회 성공");
     }
 
-    private Long requireUserId(UserContext userContext) {
+    private String requireUserKey(UserContext userContext) {
         if (userContext == null || !userContext.isAuthenticated()) {
             throw new LiveSpaceException.UnauthorizedException("Login required");
         }
-        return userContext.getUserId();
+        return userContext.getUserKey();
     }
 }

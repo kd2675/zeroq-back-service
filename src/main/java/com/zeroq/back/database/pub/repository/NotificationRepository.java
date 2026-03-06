@@ -10,16 +10,16 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
-    Page<Notification> findByUserIdOrderByCreateDateDesc(Long userId, Pageable pageable);
+    Page<Notification> findByUserKeyOrderByCreateDateDesc(String userKey, Pageable pageable);
 
-    Page<Notification> findByUserIdAndReadFalseOrderByCreateDateDesc(Long userId, Pageable pageable);
+    Page<Notification> findByUserKeyAndReadFalseOrderByCreateDateDesc(String userKey, Pageable pageable);
 
-    @Query("SELECT COUNT(n) FROM Notification n WHERE n.userId = :userId AND n.read = false")
-    long countUnreadNotifications(@Param("userId") Long userId);
+    @Query("SELECT COUNT(n) FROM Notification n WHERE n.userKey = :userKey AND n.read = false")
+    long countUnreadNotifications(@Param("userKey") String userKey);
 
-    @Query("SELECT n FROM Notification n WHERE n.userId = :userId AND n.type = :type ORDER BY n.createDate DESC")
+    @Query("SELECT n FROM Notification n WHERE n.userKey = :userKey AND n.type = :type ORDER BY n.createDate DESC")
     Page<Notification> findByUserAndType(
-            @Param("userId") Long userId,
+            @Param("userKey") String userKey,
             @Param("type") Notification.NotificationType type,
             Pageable pageable);
 }

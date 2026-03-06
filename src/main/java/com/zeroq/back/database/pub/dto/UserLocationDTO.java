@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 /**
  * UserLocation DTO
  * - 사용자 위치 정보 전송 객체
- * - 인증 사용자의 userId 기반 위치 정보 DTO
+ * - 인증 사용자의 userKey 기반 위치 정보 DTO
  */
 @Getter
 @Setter
@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 public class UserLocationDTO extends CommonDateDTO {
     private Long id;
-    private Long userId;
+    private String userKey;
     private Long spaceId;
     private String spaceName;
     private LocalDateTime visitedAt;
@@ -33,7 +33,7 @@ public class UserLocationDTO extends CommonDateDTO {
     public static UserLocationDTO from(UserLocation entity) {
         return UserLocationDTO.builder()
                 .id(entity.getId())
-                .userId(entity.getUserId())
+                .userKey(entity.getUserKey())
                 .spaceId(entity.getSpace().getId())
                 .spaceName(entity.getSpace().getName())
                 .visitedAt(entity.getVisitedAt())
