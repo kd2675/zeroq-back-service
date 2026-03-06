@@ -90,7 +90,7 @@ public class SpaceController {
         if (categoryId != null) {
             spaces = spaceService.searchSpaces(keyword, categoryId, pageable);
         } else {
-            spaces = spaceService.getActiveSpaces(pageable); // fallback
+            spaces = spaceService.searchSpaces(keyword, pageable);
         }
 
         Page<SpaceDTO> dtos = spaces.map(this::convertToDTO);
@@ -125,10 +125,10 @@ public class SpaceController {
     public ResponseDataDTO<SpaceDTO> createSpace(@Valid @RequestBody CreateSpaceRequest request) {
         log.info("Create space request: name={}", request.getName());
 
-        // TODO: CreateSpaceRequest로부터 Space entity 생성 로직 추가
-        // 현재는 예제 코드
+        Space createdSpace = spaceService.createSpace(request);
+        SpaceDTO dto = convertToDTO(createdSpace);
 
-        return ResponseDataDTO.of(null, "공간이 생성되었습니다");
+        return ResponseDataDTO.of(dto, "공간이 생성되었습니다");
     }
 
     /**
@@ -141,9 +141,10 @@ public class SpaceController {
             @Valid @RequestBody CreateSpaceRequest request) {
         log.info("Update space request: id={}, name={}", id, request.getName());
 
-        // TODO: 업데이트 로직 추가
+        Space updatedSpace = spaceService.updateSpace(id, request);
+        SpaceDTO dto = convertToDTO(updatedSpace);
 
-        return ResponseDataDTO.of(null, "공간이 수정되었습니다");
+        return ResponseDataDTO.of(dto, "공간이 수정되었습니다");
     }
 
     /**
