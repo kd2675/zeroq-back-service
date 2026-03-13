@@ -10,7 +10,6 @@ import java.util.List;
 public class SensorSpaceOverviewResponse {
     private Long spaceId;
     private String spaceName;
-    private Integer capacity;
     private SensorPlaceSnapshotDTO snapshot;
     private List<SensorDeviceDTO> sensors;
     private List<SensorRecentTelemetryDTO> recentTelemetry;

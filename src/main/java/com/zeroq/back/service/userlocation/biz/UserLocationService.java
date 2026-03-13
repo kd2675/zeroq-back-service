@@ -1,11 +1,10 @@
 package com.zeroq.back.service.userlocation.biz;
 
 import com.zeroq.back.common.exception.LiveSpaceException;
+import com.zeroq.back.database.admin.repository.AdminSpaceRepository;
 import com.zeroq.back.database.pub.dto.CreateUserLocationRequest;
 import com.zeroq.back.database.pub.dto.UserLocationDTO;
-import com.zeroq.back.database.pub.entity.Space;
 import com.zeroq.back.database.pub.entity.UserLocation;
-import com.zeroq.back.database.pub.repository.SpaceRepository;
 import com.zeroq.back.database.pub.repository.UserLocationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
 /**
  * UserLocation Service
  * - 사용자 위치 정보 관리
- * - Gateway가 전달한 인증 userKey만 사용 (Muse 패턴)
+ * - Gateway userKey를 profileId로 매핑 후 profileId만 사용
  */
 @Slf4j
 @Service
@@ -29,22 +28,22 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class UserLocationService {
     private final UserLocationRepository userLocationRepository;
-    private final SpaceRepository spaceRepository;
+    private final AdminSpaceRepository adminSpaceRepository;
 
     /**
      * 사용자 위치 정보 생성
      */
     @Transactional
-    public UserLocationDTO createUserLocation(String userKey, CreateUserLocationRequest request) {
+    public UserLocationDTO createUserLocation(Long profileId, CreateUserLocationRequest request) {
         // 1. 공간 존재 여부 확인
-        Space space = spaceRepository.findById(request.getSpaceId())
+        adminSpaceRepository.findById(request.getSpaceId())
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException(
                         "Space", "id", request.getSpaceId()));
 
-        // 2. UserLocation 생성 (인증된 userKey 사용)
+        // 2. UserLocation 생성 (인증 profileId 사용)
         UserLocation userLocation = UserLocation.builder()
-                .userKey(userKey)
-                .space(space)
+                .profileId(profileId)
+                .spaceId(request.getSpaceId())
                 .visitedAt(request.getVisitedAt())
                 .leftAt(request.getLeftAt())
                 .durationMinutes(request.getDurationMinutes() != null ? request.getDurationMinutes() : 0)
@@ -54,8 +53,8 @@ public class UserLocationService {
                 .build();
 
         UserLocation saved = userLocationRepository.save(userLocation);
-        log.info("UserLocation created: id={}, userKey={}, spaceId={}",
-                saved.getId(), saved.getUserKey(), saved.getSpace().getId());
+        log.info("UserLocation created: id={}, profileId={}, spaceId={}",
+                saved.getId(), saved.getProfileId(), saved.getSpaceId());
 
         return UserLocationDTO.from(saved);
     }
@@ -63,12 +62,12 @@ public class UserLocationService {
     /**
      * 사용자 위치 정보 조회 (본인 소유 검증)
      */
-    public UserLocationDTO getUserLocationById(String userKey, Long id) {
+    public UserLocationDTO getUserLocationById(Long profileId, Long id) {
         UserLocation userLocation = userLocationRepository.findById(id)
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException(
                         "UserLocation", "id", id));
 
-        if (!userLocation.getUserKey().equals(userKey)) {
+        if (!userLocation.getProfileId().equals(profileId)) {
             throw new LiveSpaceException.ForbiddenException("본인 위치 정보만 조회할 수 있습니다");
         }
 
@@ -78,16 +77,16 @@ public class UserLocationService {
     /**
      * 내 위치 이력 조회
      */
-    public Page<UserLocationDTO> getMyUserLocations(String userKey, Pageable pageable) {
-        Page<UserLocation> locations = userLocationRepository.findByUserKeyOrderByVisitedAtDesc(userKey, pageable);
+    public Page<UserLocationDTO> getMyUserLocations(Long profileId, Pageable pageable) {
+        Page<UserLocation> locations = userLocationRepository.findByProfileIdOrderByVisitedAtDesc(profileId, pageable);
         return locations.map(UserLocationDTO::from);
     }
 
     /**
      * 특정 공간에 대한 내 방문 이력 조회
      */
-    public List<UserLocationDTO> getMyVisitsToSpace(String userKey, Long spaceId) {
-        List<UserLocation> visits = userLocationRepository.findUserVisitsToSpace(userKey, spaceId);
+    public List<UserLocationDTO> getMyVisitsToSpace(Long profileId, Long spaceId) {
+        List<UserLocation> visits = userLocationRepository.findUserVisitsToSpace(profileId, spaceId);
         return visits.stream()
                 .map(UserLocationDTO::from)
                 .collect(Collectors.toList());
@@ -96,8 +95,8 @@ public class UserLocationService {
     /**
      * 특정 시간 이후 내 위치 이력 조회
      */
-    public List<UserLocationDTO> getMyLocationsAfter(String userKey, LocalDateTime startTime) {
-        List<UserLocation> locations = userLocationRepository.findUserLocationsAfter(userKey, startTime);
+    public List<UserLocationDTO> getMyLocationsAfter(Long profileId, LocalDateTime startTime) {
+        List<UserLocation> locations = userLocationRepository.findUserLocationsAfter(profileId, startTime);
         return locations.stream()
                 .map(UserLocationDTO::from)
                 .collect(Collectors.toList());

@@ -2,18 +2,31 @@ package com.zeroq.back.database.pub;
 
 import com.zaxxer.hikari.HikariDataSource;
 import com.zeroq.back.common.datasource.RoutingDataSource;
+import com.zeroq.back.database.pub.entity.Favorite;
+import com.zeroq.back.database.pub.entity.ProfileUser;
+import com.zeroq.back.database.pub.entity.Review;
+import com.zeroq.back.database.pub.entity.UserBehavior;
+import com.zeroq.back.database.pub.entity.UserLocation;
+import com.zeroq.back.database.pub.repository.FavoriteRepository;
+import com.zeroq.back.database.pub.repository.ProfileUserRepository;
+import com.zeroq.back.database.pub.repository.ReviewRepository;
+import com.zeroq.back.database.pub.repository.UserBehaviorRepository;
+import com.zeroq.back.database.pub.repository.UserLocationRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.boot.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.persistenceunit.PersistenceManagedTypes;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -24,7 +37,20 @@ import java.util.Map;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
-        basePackages = {"com.zeroq.back.database.pub.repository"},
+        basePackageClasses = {
+                ReviewRepository.class,
+                FavoriteRepository.class,
+                UserLocationRepository.class,
+                ProfileUserRepository.class,
+                UserBehaviorRepository.class
+        },
+        includeFilters = {
+                @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = ReviewRepository.class),
+                @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = FavoriteRepository.class),
+                @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = UserLocationRepository.class),
+                @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = ProfileUserRepository.class),
+                @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = UserBehaviorRepository.class)
+        },
         entityManagerFactoryRef = "pubEntityManagerFactory",
         transactionManagerRef = "pubTransactionManager"
 )
@@ -38,14 +64,14 @@ public class PubDataConfig {
 
     @Bean
     @Primary
-    @ConfigurationProperties("database.datasource.pub.master")
+    @ConfigurationProperties("database.datasource.service.master")
     public DataSourceProperties pubMasterDatasourceProperties() {
         return new DataSourceProperties();
     }
 
     @Bean
     @Primary
-    @ConfigurationProperties("database.datasource.pub.master.configure")
+    @ConfigurationProperties("database.datasource.service.master.configure")
     public DataSource pubMasterDatasource() {
         return pubMasterDatasourceProperties()
                 .initializeDataSourceBuilder()
@@ -54,13 +80,13 @@ public class PubDataConfig {
     }
 
     @Bean
-    @ConfigurationProperties("database.datasource.pub.slave1")
+    @ConfigurationProperties("database.datasource.service.slave1")
     public DataSourceProperties pubSlave1DatasourceProperties() {
         return new DataSourceProperties();
     }
 
     @Bean
-    @ConfigurationProperties("database.datasource.pub.slave1.configure")
+    @ConfigurationProperties("database.datasource.service.slave1.configure")
     public DataSource pubSlave1Datasource() {
         return pubSlave1DatasourceProperties()
                 .initializeDataSourceBuilder()
@@ -96,8 +122,15 @@ public class PubDataConfig {
         properties.put("hibernate.use_sql_comments", true);
 
         return builder.dataSource(new LazyConnectionDataSourceProxy(routingDataSource))
-                .packages("com.zeroq.back.database.pub.entity")
-//                .packages("org.example.database.database.auth.rep.jpa")
+                .managedTypes(
+                        PersistenceManagedTypes.of(
+                                Review.class.getName(),
+                                Favorite.class.getName(),
+                                UserLocation.class.getName(),
+                                ProfileUser.class.getName(),
+                                UserBehavior.class.getName()
+                        )
+                )
                 .properties(properties)
                 .persistenceUnit("pubEntityManager")
                 .build();

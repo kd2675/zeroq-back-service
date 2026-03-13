@@ -13,14 +13,14 @@ import java.util.List;
 
 @Repository
 public interface UserLocationRepository extends JpaRepository<UserLocation, Long> {
-    Page<UserLocation> findByUserKeyOrderByVisitedAtDesc(String userKey, Pageable pageable);
+    Page<UserLocation> findByProfileIdOrderByVisitedAtDesc(Long profileId, Pageable pageable);
 
-    @Query("SELECT ul FROM UserLocation ul WHERE ul.userKey = :userKey AND ul.space.id = :spaceId ORDER BY ul.visitedAt DESC")
-    List<UserLocation> findUserVisitsToSpace(@Param("userKey") String userKey, @Param("spaceId") Long spaceId);
+    @Query("SELECT ul FROM UserLocation ul WHERE ul.profileId = :profileId AND ul.spaceId = :spaceId ORDER BY ul.visitedAt DESC")
+    List<UserLocation> findUserVisitsToSpace(@Param("profileId") Long profileId, @Param("spaceId") Long spaceId);
 
-    @Query("SELECT ul FROM UserLocation ul WHERE ul.userKey = :userKey AND ul.visitedAt >= :startTime ORDER BY ul.visitedAt DESC")
-    List<UserLocation> findUserLocationsAfter(@Param("userKey") String userKey, @Param("startTime") LocalDateTime startTime);
+    @Query("SELECT ul FROM UserLocation ul WHERE ul.profileId = :profileId AND ul.visitedAt >= :startTime ORDER BY ul.visitedAt DESC")
+    List<UserLocation> findUserLocationsAfter(@Param("profileId") Long profileId, @Param("startTime") LocalDateTime startTime);
 
-    @Query("SELECT COUNT(ul) FROM UserLocation ul WHERE ul.space.id = :spaceId")
+    @Query("SELECT COUNT(ul) FROM UserLocation ul WHERE ul.spaceId = :spaceId")
     long countVisitsToSpace(@Param("spaceId") Long spaceId);
 }

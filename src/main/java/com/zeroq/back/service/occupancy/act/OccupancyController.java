@@ -2,8 +2,8 @@ package com.zeroq.back.service.occupancy.act;
 
 import web.common.core.response.base.dto.ResponseDataDTO;
 import com.zeroq.back.database.pub.dto.OccupancyDTO;
-import com.zeroq.back.database.pub.entity.OccupancyData;
-import com.zeroq.back.database.pub.entity.OccupancyHistory;
+import com.zeroq.back.database.admin.entity.AdminOccupancyData;
+import com.zeroq.back.database.admin.entity.AdminOccupancyHistory;
 import com.zeroq.back.service.occupancy.biz.OccupancyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ public class OccupancyController {
     public ResponseDataDTO<OccupancyDTO> getCurrentOccupancy(@PathVariable Long spaceId) {
         log.info("Get current occupancy: spaceId={}", spaceId);
 
-        OccupancyData data = occupancyService.getCurrentOccupancy(spaceId);
+        AdminOccupancyData data = occupancyService.getCurrentOccupancy(spaceId);
         OccupancyDTO dto = convertToDTO(data);
 
         return ResponseDataDTO.of(dto, "현재 점유율 조회 성공");
@@ -47,7 +47,7 @@ public class OccupancyController {
         log.info("Get occupancy history: spaceId={}, page={}, size={}", spaceId, page, size);
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<OccupancyHistory> histories = occupancyService.getOccupancyHistory(spaceId, pageable);
+        Page<AdminOccupancyHistory> histories = occupancyService.getOccupancyHistory(spaceId, pageable);
 
         Page<OccupancyDTO> dtos = histories.map(h -> OccupancyDTO.builder()
                 .spaceId(h.getSpace().getId())
@@ -81,7 +81,7 @@ public class OccupancyController {
     /**
      * DTO 변환
      */
-    private OccupancyDTO convertToDTO(OccupancyData data) {
+    private OccupancyDTO convertToDTO(AdminOccupancyData data) {
         return OccupancyDTO.builder()
                 .spaceId(data.getSpace().getId())
                 .spaceName(data.getSpace().getName())

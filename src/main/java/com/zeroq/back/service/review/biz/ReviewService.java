@@ -1,10 +1,11 @@
 package com.zeroq.back.service.review.biz;
 
 import com.zeroq.back.common.exception.LiveSpaceException;
+import com.zeroq.back.database.admin.entity.AdminSpace;
+import com.zeroq.back.database.admin.repository.AdminSpaceRepository;
+import com.zeroq.back.database.pub.dto.ReviewDTO;
 import com.zeroq.back.database.pub.entity.Review;
 import com.zeroq.back.database.pub.repository.ReviewRepository;
-import com.zeroq.back.database.pub.entity.Space;
-import com.zeroq.back.database.pub.repository.SpaceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -18,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ReviewService {
     private final ReviewRepository reviewRepository;
-    private final SpaceRepository spaceRepository;
+    private final AdminSpaceRepository adminSpaceRepository;
 
     /**
      * 공간별 리뷰 조회
@@ -30,21 +31,20 @@ public class ReviewService {
     /**
      * 사용자별 리뷰 조회
      */
-    public Page<Review> getReviewsByUser(String userKey, Pageable pageable) {
-        return reviewRepository.findByUserKeyAndDeletedFalseOrderByCreateDateDesc(userKey, pageable);
+    public Page<Review> getReviewsByProfile(Long profileId, Pageable pageable) {
+        return reviewRepository.findByProfileIdAndDeletedFalseOrderByCreateDateDesc(profileId, pageable);
     }
 
     /**
      * 리뷰 작성
      */
     @Transactional
-    public Review createReview(Long spaceId, String userKey, String title, String content, int rating) {
-        Space space = spaceRepository.findById(spaceId)
-                .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Space", "id", spaceId));
+    public Review createReview(Long spaceId, Long profileId, String title, String content, int rating) {
+        AdminSpace space = findSpace(spaceId);
 
         Review review = Review.builder()
-                .space(space)
-                .userKey(userKey)
+                .spaceId(space.getId())
+                .profileId(profileId)
                 .title(title)
                 .content(content)
                 .rating(rating)
@@ -55,7 +55,7 @@ public class ReviewService {
         // 공간 평점 업데이트
         updateSpaceRating(spaceId);
 
-        log.info("Review created: spaceId={}, userKey={}", spaceId, userKey);
+        log.info("Review created: spaceId={}, profileId={}", spaceId, profileId);
         return savedReview;
     }
 
@@ -63,11 +63,11 @@ public class ReviewService {
      * 리뷰 삭제
      */
     @Transactional
-    public void deleteReview(Long reviewId, String userKey) {
+    public void deleteReview(Long reviewId, Long profileId) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Review", "id", reviewId));
 
-        if (!review.getUserKey().equals(userKey)) {
+        if (!review.getProfileId().equals(profileId)) {
             throw new LiveSpaceException.ForbiddenException("자신의 리뷰만 삭제할 수 있습니다");
         }
 
@@ -75,7 +75,7 @@ public class ReviewService {
         reviewRepository.save(review);
         
         // 공간 평점 업데이트
-        updateSpaceRating(review.getSpace().getId());
+        updateSpaceRating(review.getSpaceId());
         
         log.info("Review deleted: reviewId={}", reviewId);
     }
@@ -86,11 +86,10 @@ public class ReviewService {
     @Transactional
     public void updateSpaceRating(Long spaceId) {
         Double averageRating = reviewRepository.getAverageRating(spaceId);
-        Space space = spaceRepository.findById(spaceId)
-                .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Space", "id", spaceId));
+        AdminSpace space = findSpace(spaceId);
 
         space.setAverageRating(averageRating != null ? averageRating : 0.0);
-        spaceRepository.save(space);
+        adminSpaceRepository.save(space);
     }
 
     /**
@@ -99,5 +98,27 @@ public class ReviewService {
     public Double getAverageRating(Long spaceId) {
         Double average = reviewRepository.getAverageRating(spaceId);
         return average != null ? average : 0.0;
+    }
+
+    public ReviewDTO toDTO(Review review) {
+        AdminSpace space = findSpace(review.getSpaceId());
+        return ReviewDTO.builder()
+                .id(review.getId())
+                .spaceId(space.getId())
+                .spaceName(space.getName())
+                .profileId(review.getProfileId())
+                .userName("")
+                .rating(review.getRating())
+                .title(review.getTitle())
+                .content(review.getContent())
+                .likeCount(review.getLikeCount())
+                .verified(review.isVerified())
+                .createdAt(review.getCreatedAt())
+                .build();
+    }
+
+    private AdminSpace findSpace(Long spaceId) {
+        return adminSpaceRepository.findById(spaceId)
+                .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Space", "id", spaceId));
     }
 }

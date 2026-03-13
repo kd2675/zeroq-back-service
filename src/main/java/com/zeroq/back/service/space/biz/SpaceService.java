@@ -1,69 +1,67 @@
 package com.zeroq.back.service.space.biz;
 
 import com.zeroq.back.common.exception.LiveSpaceException;
+import com.zeroq.back.database.admin.entity.AdminLocation;
+import com.zeroq.back.database.admin.entity.AdminSpace;
+import com.zeroq.back.database.admin.repository.AdminLocationRepository;
+import com.zeroq.back.database.admin.repository.AdminSpaceRepository;
 import com.zeroq.back.database.pub.dto.CreateSpaceRequest;
-import com.zeroq.back.database.pub.entity.Category;
-import com.zeroq.back.database.pub.entity.Location;
-import com.zeroq.back.database.pub.entity.Space;
-import com.zeroq.back.database.pub.repository.CategoryRepository;
-import com.zeroq.back.database.pub.repository.LocationRepository;
-import com.zeroq.back.database.pub.repository.SpaceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class SpaceService {
-    private final SpaceRepository spaceRepository;
-    private final CategoryRepository categoryRepository;
-    private final LocationRepository locationRepository;
+    private final AdminSpaceRepository spaceRepository;
+    private final AdminLocationRepository locationRepository;
 
     /**
      * 공간 목록 조회 (활성화 & 검증된)
      */
-    public Page<Space> getActiveSpaces(Pageable pageable) {
+    public Page<AdminSpace> getActiveSpaces(Pageable pageable) {
         return spaceRepository.findByActiveAndVerifiedTrue(true, pageable);
+    }
+
+    public Page<AdminSpace> getManagedSpaces(Long ownerProfileId, boolean adminView, Pageable pageable) {
+        if (adminView) {
+            return getActiveSpaces(pageable);
+        }
+        return spaceRepository.findByActiveTrueAndVerifiedTrueAndOwnerProfileId(ownerProfileId, pageable);
+    }
+
+    public Page<AdminSpace> getWorkspaceManagedSpaces(Long ownerProfileId, boolean adminView, Pageable pageable) {
+        if (adminView) {
+            return spaceRepository.findAll(pageable);
+        }
+        return spaceRepository.findByOwnerProfileId(ownerProfileId, pageable);
     }
 
     /**
      * 공간 상세 조회
      */
-    public Space getSpaceById(Long spaceId) {
+    public AdminSpace getSpaceById(Long spaceId) {
         return spaceRepository.findById(spaceId)
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Space", "id", spaceId));
     }
 
     /**
-     * 카테고리별 공간 조회
-     */
-    public Page<Space> getSpacesByCategory(Long categoryId, Pageable pageable) {
-        return spaceRepository.findByCategoryIdAndActiveTrue(categoryId, pageable);
-    }
-
-    /**
-     * 공간 검색 (키워드 & 카테고리)
-     */
-    public Page<Space> searchSpaces(String keyword, Long categoryId, Pageable pageable) {
-        return spaceRepository.searchByKeywordAndCategory(keyword, categoryId, pageable);
-    }
-
-    /**
      * 공간 검색 (키워드)
      */
-    public Page<Space> searchSpaces(String keyword, Pageable pageable) {
+    public Page<AdminSpace> searchSpaces(String keyword, Pageable pageable) {
         return spaceRepository.findByNameContainingIgnoreCaseAndActiveTrue(keyword, pageable);
     }
 
     /**
      * 평점 높은 공간 조회
      */
-    public Page<Space> getTopRatedSpaces(Pageable pageable) {
+    public Page<AdminSpace> getTopRatedSpaces(Pageable pageable) {
         return spaceRepository.findTopRatedSpaces(pageable);
     }
 
@@ -71,14 +69,13 @@ public class SpaceService {
      * 공간 생성 (Admin)
      */
     @Transactional
-    public Space createSpace(CreateSpaceRequest request) {
-        Category category = getCategoryById(request.getCategoryId());
-
-        Space space = Space.builder()
+    public AdminSpace createSpace(CreateSpaceRequest request, Long ownerProfileId) {
+        AdminSpace space = AdminSpace.builder()
+                .spaceCode(createSpaceCode(request.getName()))
                 .name(request.getName())
                 .description(request.getDescription())
-                .category(category)
-                .capacity(request.getCapacity())
+                .ownerProfileId(ownerProfileId)
+                .operationalStatus(defaultText(request.getOperationalStatus(), "ACTIVE"))
                 .phoneNumber(request.getPhoneNumber())
                 .operatingHours(request.getOperatingHours())
                 .imageUrl(request.getImageUrl())
@@ -87,8 +84,8 @@ public class SpaceService {
                 .averageRating(0.0)
                 .build();
 
-        Space savedSpace = spaceRepository.save(space);
-        Location location = Location.builder()
+        AdminSpace savedSpace = spaceRepository.save(space);
+        AdminLocation location = AdminLocation.builder()
                 .space(savedSpace)
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
@@ -96,7 +93,7 @@ public class SpaceService {
                 .placeId(createInternalPlaceId(savedSpace.getId()))
                 .build();
 
-        Location savedLocation = locationRepository.save(location);
+        AdminLocation savedLocation = locationRepository.save(location);
         savedSpace.setLocation(savedLocation);
         return savedSpace;
     }
@@ -105,20 +102,21 @@ public class SpaceService {
      * 공간 수정 (Admin)
      */
     @Transactional
-    public Space updateSpace(Long spaceId, CreateSpaceRequest request) {
-        Space space = getSpaceById(spaceId);
-        Category category = getCategoryById(request.getCategoryId());
+    public AdminSpace updateSpace(Long spaceId, CreateSpaceRequest request, Long requesterProfileId, boolean adminView) {
+        AdminSpace space = getOwnedSpace(spaceId, requesterProfileId, adminView);
 
         space.setName(request.getName());
         space.setDescription(request.getDescription());
-        space.setCategory(category);
-        space.setCapacity(request.getCapacity());
         space.setPhoneNumber(request.getPhoneNumber());
         space.setOperatingHours(request.getOperatingHours());
         space.setImageUrl(request.getImageUrl());
+        if (!StringUtils.hasText(space.getSpaceCode())) {
+            space.setSpaceCode(createSpaceCode(request.getName()));
+        }
+        space.setOperationalStatus(defaultText(request.getOperationalStatus(), defaultText(space.getOperationalStatus(), space.isActive() ? "ACTIVE" : "INACTIVE")));
 
-        Location location = locationRepository.findBySpaceId(spaceId)
-                .orElseGet(() -> Location.builder()
+        AdminLocation location = locationRepository.findBySpaceId(spaceId)
+                .orElseGet(() -> AdminLocation.builder()
                         .space(space)
                         .placeId(createInternalPlaceId(space.getId()))
                         .build());
@@ -130,7 +128,7 @@ public class SpaceService {
             location.setPlaceId(createInternalPlaceId(space.getId()));
         }
 
-        Location savedLocation = locationRepository.save(location);
+        AdminLocation savedLocation = locationRepository.save(location);
         space.setLocation(savedLocation);
         return spaceRepository.save(space);
     }
@@ -139,18 +137,36 @@ public class SpaceService {
      * 공간 삭제 (Admin - 논리 삭제)
      */
     @Transactional
-    public void deleteSpace(Long spaceId) {
-        Space space = getSpaceById(spaceId);
+    public void deleteSpace(Long spaceId, Long requesterProfileId, boolean adminView) {
+        AdminSpace space = getOwnedSpace(spaceId, requesterProfileId, adminView);
         space.setActive(false);
         spaceRepository.save(space);
     }
 
-    private Category getCategoryById(Long categoryId) {
-        return categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("Category", "id", categoryId));
+    public AdminSpace getOwnedSpace(Long spaceId, Long requesterProfileId, boolean adminView) {
+        AdminSpace space = getSpaceById(spaceId);
+        if (!adminView && !space.getOwnerProfileId().equals(requesterProfileId)) {
+            throw new LiveSpaceException.ForbiddenException("관리 권한이 없는 공간입니다");
+        }
+        return space;
     }
 
     private String createInternalPlaceId(Long spaceId) {
         return "zeroq-space-" + spaceId;
+    }
+
+    private String createSpaceCode(String name) {
+        String seed = StringUtils.hasText(name) ? name.replaceAll("[^A-Za-z0-9]+", "-").toUpperCase() : "SPACE";
+        if (seed.isBlank()) {
+            seed = "SPACE";
+        }
+        String normalized = seed.replaceAll("(^-|-$)", "");
+        return (normalized.length() > 32 ? normalized.substring(0, 32) : normalized)
+                + "-"
+                + Long.toUnsignedString(System.nanoTime(), 36).toUpperCase();
+    }
+
+    private String defaultText(String value, String fallback) {
+        return StringUtils.hasText(value) ? value.trim() : fallback;
     }
 }

@@ -17,6 +17,7 @@ public class SensorDeviceDTO {
     private String protocol;
     private String status;
     private Long placeId;
+    private String gatewayId;
     private String positionCode;
     private Double batteryPercent;
     private Double occupancyThresholdCm;

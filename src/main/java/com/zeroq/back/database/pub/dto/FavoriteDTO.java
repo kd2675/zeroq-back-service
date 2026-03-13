@@ -13,7 +13,6 @@ public class FavoriteDTO {
     private Long id;
     private Long spaceId;
     private String spaceName;
-    private String categoryName;
     private int order;
     private String note;
 }

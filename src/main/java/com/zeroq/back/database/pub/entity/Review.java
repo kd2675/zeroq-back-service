@@ -6,8 +6,8 @@ import lombok.*;
 
 @Entity
 @Table(name = "review", indexes = {
-        @Index(name = "idx_space_id_created_at", columnList = "space_id,created_at"),
-        @Index(name = "idx_user_key", columnList = "user_key")
+        @Index(name = "idx_space_id_created_at", columnList = "space_id,create_date"),
+        @Index(name = "idx_profile_id", columnList = "profile_id")
 })
 @Getter
 @Setter
@@ -19,12 +19,11 @@ public class Review extends CommonDateEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "space_id", nullable = false)
-    private Space space;
+    @Column(name = "space_id", nullable = false)
+    private Long spaceId;
 
-    @Column(name = "user_key", nullable = false)
-    private String userKey;
+    @Column(name = "profile_id", nullable = false)
+    private Long profileId;
 
     @Column(nullable = false)
     private int rating; // 별점 (1-5)
@@ -36,12 +35,15 @@ public class Review extends CommonDateEntity {
     private String content; // 내용
 
     @Column(nullable = false)
+    @Builder.Default
     private int likeCount = 0; // 좋아요 수
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean verified = false; // 인증 리뷰 여부
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean deleted = false; // 삭제 여부
 
     @Column(length = 500)

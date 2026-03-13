@@ -8,6 +8,5 @@ import lombok.Getter;
 public class SensorPublicSnapshotResponse {
     private Long spaceId;
     private String spaceName;
-    private Integer capacity;
     private SensorPlaceSnapshotDTO snapshot;
 }

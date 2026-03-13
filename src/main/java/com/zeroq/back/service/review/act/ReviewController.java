@@ -5,6 +5,7 @@ import web.common.core.response.base.dto.ResponseDataDTO;
 import com.zeroq.back.common.exception.LiveSpaceException;
 import com.zeroq.back.database.pub.dto.ReviewDTO;
 import com.zeroq.back.database.pub.entity.Review;
+import com.zeroq.back.service.profile.biz.ProfileUserService;
 import com.zeroq.back.service.review.biz.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class ReviewController {
     private final ReviewService reviewService;
+    private final ProfileUserService profileUserService;
 
     /**
      * 공간별 리뷰 조회
@@ -34,53 +36,40 @@ public class ReviewController {
 
         Pageable pageable = PageRequest.of(page, size);
         Page<Review> reviews = reviewService.getReviewsBySpace(spaceId, pageable);
-
-        Page<ReviewDTO> dtos = reviews.map(r -> ReviewDTO.builder()
-                .id(r.getId())
-                .spaceId(r.getSpace().getId())
-                .spaceName(r.getSpace().getName())
-                .userKey(r.getUserKey())
-                .userName("")
-                .rating(r.getRating())
-                .title(r.getTitle())
-                .content(r.getContent())
-                .likeCount(r.getLikeCount())
-                .verified(r.isVerified())
-                .createdAt(r.getCreatedAt())
-                .build());
+        Page<ReviewDTO> dtos = reviews.map(reviewService::toDTO);
 
         return ResponseDataDTO.of(dtos, "리뷰 목록 조회 성공");
     }
 
     /**
-     * 사용자별 리뷰 조회
+     * 프로필별 리뷰 조회
+     * GET /api/v1/reviews/profiles/{profileId}?page=0&size=20
+     */
+    @GetMapping("/profiles/{profileId}")
+    public ResponseDataDTO<Page<ReviewDTO>> getReviewsByProfile(
+            @PathVariable Long profileId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        log.info("Get reviews by profile: profileId={}, page={}, size={}", profileId, page, size);
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Review> reviews = reviewService.getReviewsByProfile(profileId, pageable);
+        Page<ReviewDTO> dtos = reviews.map(reviewService::toDTO);
+
+        return ResponseDataDTO.of(dtos, "사용자 리뷰 조회 성공");
+    }
+
+    /**
+     * Legacy 호환: userKey 경로를 profileId 경로로 매핑
      * GET /api/v1/reviews/users/{userKey}?page=0&size=20
      */
     @GetMapping("/users/{userKey}")
-    public ResponseDataDTO<Page<ReviewDTO>> getReviewsByUser(
+    public ResponseDataDTO<Page<ReviewDTO>> getReviewsByUserKey(
             @PathVariable String userKey,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        log.info("Get reviews by user: userKey={}, page={}, size={}", userKey, page, size);
-
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Review> reviews = reviewService.getReviewsByUser(userKey, pageable);
-
-        Page<ReviewDTO> dtos = reviews.map(r -> ReviewDTO.builder()
-                .id(r.getId())
-                .spaceId(r.getSpace().getId())
-                .spaceName(r.getSpace().getName())
-                .userKey(r.getUserKey())
-                .userName("")
-                .rating(r.getRating())
-                .title(r.getTitle())
-                .content(r.getContent())
-                .likeCount(r.getLikeCount())
-                .verified(r.isVerified())
-                .createdAt(r.getCreatedAt())
-                .build());
-
-        return ResponseDataDTO.of(dtos, "사용자 리뷰 조회 성공");
+        Long profileId = profileUserService.getProfileIdByUserKey(userKey);
+        return getReviewsByProfile(profileId, page, size);
     }
 
     /**
@@ -95,23 +84,11 @@ public class ReviewController {
             @RequestParam String title,
             @RequestParam String content,
             @RequestParam int rating) {
-        String userKey = requireUserKey(userContext);
-        log.info("Create review: userKey={}, spaceId={}, rating={}", userKey, spaceId, rating);
+        Long profileId = resolveProfileId(userContext);
+        log.info("Create review: profileId={}, spaceId={}, rating={}", profileId, spaceId, rating);
 
-        Review review = reviewService.createReview(spaceId, userKey, title, content, rating);
-        ReviewDTO dto = ReviewDTO.builder()
-                .id(review.getId())
-                .spaceId(review.getSpace().getId())
-                .spaceName(review.getSpace().getName())
-                .userKey(review.getUserKey())
-                .userName("")
-                .rating(review.getRating())
-                .title(review.getTitle())
-                .content(review.getContent())
-                .likeCount(review.getLikeCount())
-                .verified(review.isVerified())
-                .createdAt(review.getCreatedAt())
-                .build();
+        Review review = reviewService.createReview(spaceId, profileId, title, content, rating);
+        ReviewDTO dto = reviewService.toDTO(review);
 
         return ResponseDataDTO.of(dto, "리뷰가 작성되었습니다");
     }
@@ -124,10 +101,10 @@ public class ReviewController {
     public ResponseDataDTO<Void> deleteReview(
             @PathVariable Long reviewId,
             UserContext userContext) {
-        String userKey = requireUserKey(userContext);
-        log.info("Delete review: reviewId={}, userKey={}", reviewId, userKey);
+        Long profileId = resolveProfileId(userContext);
+        log.info("Delete review: reviewId={}, profileId={}", reviewId, profileId);
 
-        reviewService.deleteReview(reviewId, userKey);
+        reviewService.deleteReview(reviewId, profileId);
 
         return ResponseDataDTO.of(null, "리뷰가 삭제되었습니다");
     }
@@ -145,10 +122,16 @@ public class ReviewController {
         return ResponseDataDTO.of(averageRating, "평균 평점 조회 성공");
     }
 
-    private String requireUserKey(UserContext userContext) {
-        if (userContext == null || userContext.getUserKey() == null) {
+    private Long resolveProfileId(UserContext userContext) {
+        if (userContext == null || !userContext.isAuthenticated()) {
+            throw new LiveSpaceException.UnauthorizedException("Login required");
+        }
+        if (!userContext.isUser()) {
+            throw new LiveSpaceException.ForbiddenException("USER role required");
+        }
+        if (userContext.getUserKey() == null || userContext.getUserKey().isBlank()) {
             throw new LiveSpaceException.ForbiddenException("인증 사용자 정보가 없습니다");
         }
-        return userContext.getUserKey();
+        return profileUserService.resolveProfileId(userContext.getUserKey(), userContext.getUserName());
     }
 }

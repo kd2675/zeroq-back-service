@@ -26,14 +26,36 @@ spring:
 
 database:
   datasource:
-    pub:
+    service:
       master:
-        url: jdbc:h2:mem:zeroq_testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+        url: jdbc:h2:mem:zeroq_service_testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
         driver-class-name: org.h2.Driver
         username: sa
         password:
       slave1:
-        url: jdbc:h2:mem:zeroq_testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+        url: jdbc:h2:mem:zeroq_service_testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+        driver-class-name: org.h2.Driver
+        username: sa
+        password:
+    admin:
+      master:
+        url: jdbc:h2:mem:zeroq_admin_testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+        driver-class-name: org.h2.Driver
+        username: sa
+        password:
+      slave1:
+        url: jdbc:h2:mem:zeroq_admin_testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+        driver-class-name: org.h2.Driver
+        username: sa
+        password:
+    sensor:
+      master:
+        url: jdbc:h2:mem:zeroq_sensor_testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+        driver-class-name: org.h2.Driver
+        username: sa
+        password:
+      slave1:
+        url: jdbc:h2:mem:zeroq_sensor_testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
         driver-class-name: org.h2.Driver
         username: sa
         password:

@@ -33,6 +33,9 @@ public class RegisterSensorDeviceRequest {
     @Positive
     private Long placeId;
 
+    @Size(max = 50)
+    private String gatewayId;
+
     private String positionCode;
 
     @DecimalMin(value = "0.1")

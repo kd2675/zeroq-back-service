@@ -1,11 +1,11 @@
 package com.zeroq.back.service.occupancy.biz;
 
 import com.zeroq.back.common.exception.LiveSpaceException;
-import com.zeroq.back.database.pub.entity.OccupancyData;
-import com.zeroq.back.database.pub.entity.OccupancyHistory;
-import com.zeroq.back.database.pub.repository.OccupancyDataRepository;
-import com.zeroq.back.database.pub.repository.OccupancyHistoryRepository;
-import com.zeroq.back.database.pub.entity.Space;
+import com.zeroq.back.database.admin.entity.AdminOccupancyData;
+import com.zeroq.back.database.admin.entity.AdminOccupancyHistory;
+import com.zeroq.back.database.admin.entity.AdminSpace;
+import com.zeroq.back.database.admin.repository.AdminOccupancyDataRepository;
+import com.zeroq.back.database.admin.repository.AdminOccupancyHistoryRepository;
 import com.zeroq.back.service.space.biz.SpaceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,14 +21,14 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class OccupancyService {
-    private final OccupancyDataRepository occupancyDataRepository;
-    private final OccupancyHistoryRepository occupancyHistoryRepository;
+    private final AdminOccupancyDataRepository occupancyDataRepository;
+    private final AdminOccupancyHistoryRepository occupancyHistoryRepository;
     private final SpaceService spaceService;
 
     /**
      * 현재 점유율 조회
      */
-    public OccupancyData getCurrentOccupancy(Long spaceId) {
+    public AdminOccupancyData getCurrentOccupancy(Long spaceId) {
         return occupancyDataRepository.findBySpaceId(spaceId)
                 .orElseThrow(() -> new LiveSpaceException.ResourceNotFoundException("OccupancyData", "spaceId", spaceId));
     }
@@ -36,14 +36,14 @@ public class OccupancyService {
     /**
      * 점유율 히스토리 조회
      */
-    public Page<OccupancyHistory> getOccupancyHistory(Long spaceId, Pageable pageable) {
+    public Page<AdminOccupancyHistory> getOccupancyHistory(Long spaceId, Pageable pageable) {
         return occupancyHistoryRepository.findBySpaceIdOrderByCreateDateDesc(spaceId, pageable);
     }
 
     /**
      * 기간별 점유율 히스토리
      */
-    public java.util.List<OccupancyHistory> getOccupancyHistoryByDateRange(Long spaceId, LocalDateTime startTime, LocalDateTime endTime) {
+    public java.util.List<AdminOccupancyHistory> getOccupancyHistoryByDateRange(Long spaceId, LocalDateTime startTime, LocalDateTime endTime) {
         return occupancyHistoryRepository.findBySpaceIdAndDateRange(spaceId, startTime, endTime);
     }
 
@@ -59,10 +59,10 @@ public class OccupancyService {
      */
     @Transactional
     public void updateOccupancy(Long spaceId, int currentOccupancy, int maxCapacity) {
-        Space space = spaceService.getSpaceById(spaceId);
-        
-        OccupancyData occupancyData = occupancyDataRepository.findBySpaceId(spaceId)
-                .orElse(OccupancyData.builder()
+        AdminSpace space = spaceService.getSpaceById(spaceId);
+
+        AdminOccupancyData occupancyData = occupancyDataRepository.findBySpaceId(spaceId)
+                .orElse(AdminOccupancyData.builder()
                         .space(space)
                         .maxCapacity(maxCapacity)
                         .build());
@@ -71,7 +71,7 @@ public class OccupancyService {
         occupancyDataRepository.save(occupancyData);
 
         // 히스토리 저장
-        OccupancyHistory history = OccupancyHistory.builder()
+        AdminOccupancyHistory history = AdminOccupancyHistory.builder()
                 .space(space)
                 .occupancyCount(currentOccupancy)
                 .occupancyPercentage(occupancyData.getOccupancyPercentage())

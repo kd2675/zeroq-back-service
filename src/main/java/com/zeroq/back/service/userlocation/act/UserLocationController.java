@@ -4,6 +4,7 @@ import auth.common.core.context.UserContext;
 import com.zeroq.back.database.pub.dto.CreateUserLocationRequest;
 import com.zeroq.back.database.pub.dto.UserLocationDTO;
 import com.zeroq.back.common.exception.LiveSpaceException;
+import com.zeroq.back.service.profile.biz.ProfileUserService;
 import com.zeroq.back.service.userlocation.biz.UserLocationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ import java.util.List;
 /**
  * UserLocation Controller
  * - 사용자 위치 정보 관리 API
- * - Muse와 동일하게 Gateway UserContext(userKey) 기반으로 동작
+ * - Gateway UserContext(userKey) -> profileId 매핑 후 동작
  */
 @Slf4j
 @RestController
@@ -31,6 +32,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserLocationController {
     private final UserLocationService userLocationService;
+    private final ProfileUserService profileUserService;
 
     /**
      * 사용자 위치 정보 생성
@@ -41,9 +43,9 @@ public class UserLocationController {
     public ResponseDataDTO<UserLocationDTO> createUserLocation(
             @Valid @RequestBody CreateUserLocationRequest request,
             UserContext userContext) {
-        String userKey = requireUserKey(userContext);
-        log.info("Create user location: userKey={}, spaceId={}", userKey, request.getSpaceId());
-        UserLocationDTO dto = userLocationService.createUserLocation(userKey, request);
+        Long profileId = resolveProfileId(userContext);
+        log.info("Create user location: profileId={}, spaceId={}", profileId, request.getSpaceId());
+        UserLocationDTO dto = userLocationService.createUserLocation(profileId, request);
         return ResponseDataDTO.of(dto, "사용자 위치 정보가 생성되었습니다");
     }
 
@@ -55,9 +57,9 @@ public class UserLocationController {
     public ResponseDataDTO<UserLocationDTO> getUserLocationById(
             @PathVariable Long id,
             UserContext userContext) {
-        String userKey = requireUserKey(userContext);
-        log.info("Get my user location by id: userKey={}, id={}", userKey, id);
-        UserLocationDTO dto = userLocationService.getUserLocationById(userKey, id);
+        Long profileId = resolveProfileId(userContext);
+        log.info("Get my user location by id: profileId={}, id={}", profileId, id);
+        UserLocationDTO dto = userLocationService.getUserLocationById(profileId, id);
         return ResponseDataDTO.of(dto, "사용자 위치 정보 조회 성공");
     }
 
@@ -70,9 +72,9 @@ public class UserLocationController {
             UserContext userContext,
             @PageableDefault(size = 20, sort = "visitedAt", direction = Sort.Direction.DESC)
             Pageable pageable) {
-        String userKey = requireUserKey(userContext);
-        log.info("Get my locations: userKey={}", userKey);
-        Page<UserLocationDTO> page = userLocationService.getMyUserLocations(userKey, pageable);
+        Long profileId = resolveProfileId(userContext);
+        log.info("Get my locations: profileId={}", profileId);
+        Page<UserLocationDTO> page = userLocationService.getMyUserLocations(profileId, pageable);
         return ResponseDataDTO.of(page, "사용자 위치 이력 조회 성공");
     }
 
@@ -84,9 +86,9 @@ public class UserLocationController {
     public ResponseDataDTO<List<UserLocationDTO>> getMyVisitsToSpace(
             UserContext userContext,
             @PathVariable Long spaceId) {
-        String userKey = requireUserKey(userContext);
-        log.info("Get user visits to space: userKey={}, spaceId={}", userKey, spaceId);
-        List<UserLocationDTO> visits = userLocationService.getMyVisitsToSpace(userKey, spaceId);
+        Long profileId = resolveProfileId(userContext);
+        log.info("Get user visits to space: profileId={}, spaceId={}", profileId, spaceId);
+        List<UserLocationDTO> visits = userLocationService.getMyVisitsToSpace(profileId, spaceId);
         return ResponseDataDTO.of(visits, "공간 방문 이력 조회 성공");
     }
 
@@ -98,9 +100,9 @@ public class UserLocationController {
     public ResponseDataDTO<List<UserLocationDTO>> getMyLocationsAfter(
             UserContext userContext,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime) {
-        String userKey = requireUserKey(userContext);
-        log.info("Get user locations after: userKey={}, startTime={}", userKey, startTime);
-        List<UserLocationDTO> locations = userLocationService.getMyLocationsAfter(userKey, startTime);
+        Long profileId = resolveProfileId(userContext);
+        log.info("Get user locations after: profileId={}, startTime={}", profileId, startTime);
+        List<UserLocationDTO> locations = userLocationService.getMyLocationsAfter(profileId, startTime);
         return ResponseDataDTO.of(locations, "사용자 위치 이력 조회 성공");
     }
 
@@ -115,10 +117,16 @@ public class UserLocationController {
         return ResponseDataDTO.of(count, "공간 방문 횟수 조회 성공");
     }
 
-    private String requireUserKey(UserContext userContext) {
+    private Long resolveProfileId(UserContext userContext) {
         if (userContext == null || !userContext.isAuthenticated()) {
             throw new LiveSpaceException.UnauthorizedException("Login required");
         }
-        return userContext.getUserKey();
+        if (!userContext.isUser()) {
+            throw new LiveSpaceException.ForbiddenException("USER role required");
+        }
+        if (userContext.getUserKey() == null || userContext.getUserKey().isBlank()) {
+            throw new LiveSpaceException.ForbiddenException("인증 사용자 정보가 없습니다");
+        }
+        return profileUserService.resolveProfileId(userContext.getUserKey(), userContext.getUserName());
     }
 }

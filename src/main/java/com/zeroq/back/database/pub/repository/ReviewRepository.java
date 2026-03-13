@@ -12,11 +12,11 @@ import org.springframework.stereotype.Repository;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     Page<Review> findBySpaceIdAndDeletedFalseOrderByCreateDateDesc(Long spaceId, Pageable pageable);
 
-    Page<Review> findByUserKeyAndDeletedFalseOrderByCreateDateDesc(String userKey, Pageable pageable);
+    Page<Review> findByProfileIdAndDeletedFalseOrderByCreateDateDesc(Long profileId, Pageable pageable);
 
-    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.space.id = :spaceId AND r.deleted = false")
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.spaceId = :spaceId AND r.deleted = false")
     Double getAverageRating(@Param("spaceId") Long spaceId);
 
-    @Query("SELECT COUNT(r) FROM Review r WHERE r.space.id = :spaceId AND r.deleted = false")
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.spaceId = :spaceId AND r.deleted = false")
     long countReviewsBySpace(@Param("spaceId") Long spaceId);
 }

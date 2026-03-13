@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface UserBehaviorRepository extends JpaRepository<UserBehavior, Long> {
-    Optional<UserBehavior> findByUserKey(String userKey);
+    Optional<UserBehavior> findByProfileId(Long profileId);
 }

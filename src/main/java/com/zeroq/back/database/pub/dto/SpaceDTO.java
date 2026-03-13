@@ -16,11 +16,9 @@ public class SpaceDTO extends CommonDateDTO {
     private Long id;
     private String name;
     private String description;
-    private String categoryName;
     private double latitude;
     private double longitude;
     private String address;
-    private int capacity;
     private double averageRating;
     private int reviewCount;
     private String imageUrl;

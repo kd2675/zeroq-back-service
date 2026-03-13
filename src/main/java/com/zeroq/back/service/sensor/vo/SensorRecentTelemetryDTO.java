@@ -13,6 +13,8 @@ public class SensorRecentTelemetryDTO {
     private Long placeId;
     private Double distanceCm;
     private Boolean occupied;
+    private Integer padLeftValue;
+    private Integer padRightValue;
     private String qualityStatus;
     private LocalDateTime measuredAt;
     private LocalDateTime receivedAt;

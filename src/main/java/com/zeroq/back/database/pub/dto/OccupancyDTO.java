@@ -1,6 +1,6 @@
 package com.zeroq.back.database.pub.dto;
 
-import com.zeroq.back.database.pub.entity.CrowdLevel;
+import com.zeroq.back.common.model.CrowdLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

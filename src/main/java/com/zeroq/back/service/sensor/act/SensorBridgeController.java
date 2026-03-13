@@ -87,4 +87,13 @@ public class SensorBridgeController {
     ) {
         return ResponseDataDTO.of(sensorBridgeService.createCommand(request, userContext), "센서 명령 생성 완료");
     }
+
+    @DeleteMapping("/devices/{sensorId}")
+    public ResponseDataDTO<Void> deleteSensor(
+            @PathVariable String sensorId,
+            UserContext userContext
+    ) {
+        sensorBridgeService.deleteSensor(sensorId, userContext);
+        return ResponseDataDTO.of(null, "센서가 삭제되었습니다");
+    }
 }

@@ -1,6 +1,6 @@
 # zeroq-back-service
 
-ZeroQ 핵심 비즈니스 API입니다. 공간 조회, 혼잡도, 리뷰, 즐겨찾기, 사용자 위치 기록과 센서 통합 브리지 API(`space-sensors`)를 제공합니다. 인증은 `auth-back-server`, 진입은 `cloud-back-server`를 전제로 합니다.
+ZeroQ 핵심 비즈니스 API입니다. 공간/매장/센서 원장은 `ZEROQ_ADMIN`에서 읽고, 사용자 프로필/즐겨찾기/리뷰/방문 기록은 `ZEROQ_SERVICE`에서 관리합니다. 인증은 `auth-back-server`, 진입은 `cloud-back-server`를 전제로 합니다.
 
 ## 역할
 
@@ -56,14 +56,44 @@ ZeroQ 핵심 비즈니스 API입니다. 공간 조회, 혼잡도, 리뷰, 즐겨
 
 - 설정: `src/main/resources/application*.yml`
 - 로그: `src/main/resources/logback-spring.xml`
-- 전체 DDL: `src/main/resources/db/ddl/zeroq_all.sql`
-- 데이터 리셋: `src/main/resources/db/ddl/zeroq_data_reset_keep_users.sql`
-- 개발 시드: `src/main/resources/db/seed/zeroq_content_seed.sql`
+- 서비스 DB DDL (`ZEROQ_SERVICE`, 사용자 도메인 전용): `src/main/resources/db/ddl/zeroq_all.sql`
+- 서비스 DB 리셋: `src/main/resources/db/ddl/zeroq_data_reset_keep_users.sql`
+- 서비스 DB 시드: `src/main/resources/db/seed/zeroq_content_seed.sql`
+- 어드민 DB DDL (`ZEROQ_ADMIN`, 공간/혼잡도/센서/게이트웨이 원장): `src/main/resources/db/ddl/zeroq_admin_all.sql`
+- 어드민 DB 리셋: `src/main/resources/db/ddl/zeroq_admin_data_reset.sql`
+- 어드민 DB 시드: `src/main/resources/db/seed/zeroq_admin_seed.sql`
+
+### 초기화 순서 (로컬 기준)
+
+```bash
+# 1) schema 생성
+mysql -uroot -p < src/main/resources/db/ddl/zeroq_all.sql
+mysql -uroot -p < src/main/resources/db/ddl/zeroq_admin_all.sql
+
+# 2) seed 적재
+mysql -uroot -p < src/main/resources/db/seed/zeroq_content_seed.sql
+mysql -uroot -p < src/main/resources/db/seed/zeroq_admin_seed.sql
+```
+
+### 통합 초기화 (service + admin + sensor)
+
+루트에서 아래 스크립트를 실행하면 `ZEROQ_SERVICE`, `ZEROQ_ADMIN`, `ZEROQ_SENSOR`를 한 번에 초기화할 수 있습니다.
+
+```bash
+# 기본값: localhost:3306 / root / 비밀번호 없음
+./scripts/init-zeroq-db.sh
+
+# 비밀번호/접속정보 지정
+MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USER=root MYSQL_PASSWORD=1234 ./scripts/init-zeroq-db.sh
+
+# 스키마만 재생성(시드 제외)
+./scripts/init-zeroq-db.sh --reset-only
+```
 
 ## 센서 브리지 설정
 
 ```bash
-ZEROQ_SENSOR_BRIDGE_BASE_URL=http://localhost:20181
+database.datasource.sensor.master.url=jdbc:mysql://localhost:3306/ZEROQ_SENSOR
 ZEROQ_SENSOR_BRIDGE_CONNECT_TIMEOUT_MS=3000
 ZEROQ_SENSOR_BRIDGE_READ_TIMEOUT_MS=7000
 ```
@@ -73,3 +103,4 @@ ZEROQ_SENSOR_BRIDGE_READ_TIMEOUT_MS=7000
 - 역할 모델은 `USER`, `MANAGER`, `ADMIN`입니다.
 - 테스트 파일은 존재하지만 현재 회귀 범위는 넓지 않고 `contextLoads` 비중이 큽니다.
 - 사용자 계정 원천 데이터는 `auth-back-server`가 소유하고, 본 서비스는 `user_key`를 중심으로 연결합니다.
+- `spaceId`/`sensorId`는 사용자 DB와 어드민 DB를 느슨하게 연결하는 비즈니스 키이며, cross-schema FK는 두지 않습니다.
