@@ -1,56 +1,53 @@
 package com.zeroq.back.common.exception;
 
-import lombok.Getter;
+import web.common.core.response.base.exception.GeneralException;
+import web.common.core.response.base.vo.Code;
 
-@Getter
-public class LiveSpaceException extends RuntimeException {
-    private final String code;
-    private final int status;
+public class LiveSpaceException extends GeneralException {
 
-    public LiveSpaceException(String code, String message, int status) {
-        super(message);
-        this.code = code;
-        this.status = status;
+    public LiveSpaceException(Code errorCode, String message) {
+        super(errorCode, message);
     }
 
-    public LiveSpaceException(String code, String message) {
-        super(message);
-        this.code = code;
-        this.status = 400;
+    public Integer getCode() {
+        return getErrorCode().getCode();
+    }
+
+    public int getStatus() {
+        return getErrorCode().getHttpStatus().value();
     }
 
     // 자주 사용되는 예외들
     public static class ResourceNotFoundException extends LiveSpaceException {
         public ResourceNotFoundException(String resourceName, String fieldName, Object fieldValue) {
             super(
-                    "RESOURCE_NOT_FOUND",
-                    String.format("%s not found with %s: '%s'", resourceName, fieldName, fieldValue),
-                    404
+                    Code.NOT_FOUND,
+                    String.format("%s not found with %s: '%s'", resourceName, fieldName, fieldValue)
             );
         }
     }
 
     public static class ValidationException extends LiveSpaceException {
         public ValidationException(String message) {
-            super("VALIDATION_ERROR", message, 400);
+            super(Code.VALIDATION_ERROR, message);
         }
     }
 
     public static class UnauthorizedException extends LiveSpaceException {
         public UnauthorizedException(String message) {
-            super("UNAUTHORIZED", message, 401);
+            super(Code.UNAUTHORIZED, message);
         }
     }
 
     public static class ForbiddenException extends LiveSpaceException {
         public ForbiddenException(String message) {
-            super("FORBIDDEN", message, 403);
+            super(Code.FORBIDDEN, message);
         }
     }
 
     public static class ConflictException extends LiveSpaceException {
         public ConflictException(String message) {
-            super("CONFLICT", message, 409);
+            super(Code.CONFLICT, message);
         }
     }
 }
