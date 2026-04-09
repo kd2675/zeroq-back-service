@@ -52,6 +52,12 @@ ZeroQ 핵심 비즈니스 API입니다. 공간/매장/센서 원장은 `ZEROQ_AD
 - `web-common-core`
 - `auth-common-core`
 
+## Related Docs
+
+- `AGENTS.md`
+- `AGENTS_ZEROQ_CURRENT_FLOW_ANALYSIS_REPORT.md`
+- `AGENTS_ZEROQ_DEVELOPMENT_ONLY.md`
+
 ## 데이터와 리소스
 
 - 설정: `src/main/resources/application*.yml`
