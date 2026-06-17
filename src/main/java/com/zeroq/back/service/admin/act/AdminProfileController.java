@@ -1,5 +1,7 @@
 package com.zeroq.back.service.admin.act;
 
+import auth.common.core.constant.UserRole;
+import auth.common.core.context.RequirePrincipalRole;
 import auth.common.core.context.UserContext;
 import com.zeroq.back.common.exception.LiveSpaceException;
 import com.zeroq.back.service.admin.biz.AdminProfileService;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import web.common.core.response.base.dto.ResponseDataDTO;
 
 @RestController
+@RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
 @RequestMapping("/api/zeroq/v1/admin/profile")
 @RequiredArgsConstructor
 public class AdminProfileController {
@@ -20,7 +23,6 @@ public class AdminProfileController {
 
     @GetMapping("/summary")
     public ResponseDataDTO<AdminProfileSummaryResponse> getProfileSummary(UserContext userContext) {
-        requireManagerOrAdmin(userContext);
         return ResponseDataDTO.of(
                 adminProfileService.getProfileSummary(requireUserKey(userContext)),
                 "관리자 프로필 요약 조회 성공"
@@ -29,7 +31,6 @@ public class AdminProfileController {
 
     @PostMapping("/initialize")
     public ResponseDataDTO<AdminProfileSummaryResponse> initializeProfile(UserContext userContext) {
-        requireManagerOrAdmin(userContext);
         return ResponseDataDTO.of(
                 adminProfileService.initializeProfile(
                         requireUserKey(userContext),
@@ -45,14 +46,5 @@ public class AdminProfileController {
             throw new LiveSpaceException.UnauthorizedException("Login required");
         }
         return userContext.getUserKey();
-    }
-
-    private void requireManagerOrAdmin(UserContext userContext) {
-        if (userContext == null || !userContext.isAuthenticated()) {
-            throw new LiveSpaceException.UnauthorizedException("Login required");
-        }
-        if (!userContext.isManager() && !userContext.isAdmin()) {
-            throw new LiveSpaceException.ForbiddenException("MANAGER or ADMIN role required");
-        }
     }
 }

@@ -1,5 +1,7 @@
 package com.zeroq.back.service.sensor.act;
 
+import auth.common.core.constant.UserRole;
+import auth.common.core.context.RequirePrincipalRole;
 import auth.common.core.context.UserContext;
 import com.zeroq.back.service.sensor.biz.SensorBridgeService;
 import com.zeroq.back.service.sensor.vo.*;
@@ -17,6 +19,7 @@ public class SensorBridgeController {
     private final SensorBridgeService sensorBridgeService;
 
     @GetMapping("/spaces/{spaceId}/overview")
+    @RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
     public ResponseDataDTO<SensorSpaceOverviewResponse> getSpaceOverview(
             @PathVariable Long spaceId,
             @RequestParam(defaultValue = "false") boolean recalculate,
@@ -47,6 +50,7 @@ public class SensorBridgeController {
     }
 
     @GetMapping("/devices")
+    @RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
     public ResponseDataDTO<List<SensorDeviceDTO>> getDevices(
             @RequestParam(required = false) Long placeId,
             UserContext userContext
@@ -55,6 +59,7 @@ public class SensorBridgeController {
     }
 
     @PostMapping("/devices")
+    @RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
     public ResponseDataDTO<SensorDeviceDTO> registerSensor(
             @Valid @RequestBody RegisterSensorDeviceRequest request,
             UserContext userContext
@@ -63,6 +68,7 @@ public class SensorBridgeController {
     }
 
     @PutMapping("/devices/{sensorId}/install")
+    @RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
     public ResponseDataDTO<SensorDeviceDTO> installSensor(
             @PathVariable String sensorId,
             @Valid @RequestBody InstallSensorDeviceRequest request,
@@ -72,6 +78,7 @@ public class SensorBridgeController {
     }
 
     @PatchMapping("/devices/{sensorId}/status")
+    @RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
     public ResponseDataDTO<SensorDeviceDTO> updateStatus(
             @PathVariable String sensorId,
             @Valid @RequestBody UpdateSensorDeviceStatusRequest request,
@@ -81,6 +88,7 @@ public class SensorBridgeController {
     }
 
     @PostMapping("/commands")
+    @RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
     public ResponseDataDTO<SensorCommandDTO> createCommand(
             @Valid @RequestBody CreateSensorCommandRequest request,
             UserContext userContext
@@ -89,6 +97,7 @@ public class SensorBridgeController {
     }
 
     @DeleteMapping("/devices/{sensorId}")
+    @RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
     public ResponseDataDTO<Void> deleteSensor(
             @PathVariable String sensorId,
             UserContext userContext

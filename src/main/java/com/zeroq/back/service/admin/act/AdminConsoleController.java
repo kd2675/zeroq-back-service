@@ -1,5 +1,7 @@
 package com.zeroq.back.service.admin.act;
 
+import auth.common.core.constant.UserRole;
+import auth.common.core.context.RequirePrincipalRole;
 import auth.common.core.context.UserContext;
 import com.zeroq.back.service.admin.biz.AdminConsoleService;
 import com.zeroq.back.service.admin.vo.AdminConsoleSettingsResponse;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import web.common.core.response.base.dto.ResponseDataDTO;
 
 @RestController
+@RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
 @RequestMapping("/api/zeroq/v1/admin")
 @RequiredArgsConstructor
 public class AdminConsoleController {

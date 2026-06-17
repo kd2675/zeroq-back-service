@@ -1,5 +1,7 @@
 package com.zeroq.back.service.gateway.act;
 
+import auth.common.core.constant.UserRole;
+import auth.common.core.context.RequirePrincipalRole;
 import auth.common.core.context.UserContext;
 import com.zeroq.back.common.exception.LiveSpaceException;
 import com.zeroq.back.service.admin.biz.AdminProfileService;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import web.common.core.response.base.dto.ResponseDataDTO;
 
 @RestController
+@RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
 @RequestMapping("/api/zeroq/v1/gateways")
 @RequiredArgsConstructor
 public class GatewayController {
@@ -39,9 +42,6 @@ public class GatewayController {
     private Long resolveAdminProfileId(UserContext userContext) {
         if (userContext == null || !userContext.isAuthenticated()) {
             throw new LiveSpaceException.UnauthorizedException("Login required");
-        }
-        if (!userContext.isManager() && !userContext.isAdmin()) {
-            throw new LiveSpaceException.ForbiddenException("MANAGER or ADMIN role required");
         }
         if (userContext.getUserKey() == null || userContext.getUserKey().isBlank()) {
             throw new LiveSpaceException.ForbiddenException("인증 사용자 정보가 없습니다");

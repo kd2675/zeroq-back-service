@@ -1,7 +1,8 @@
 package com.zeroq.back.service.space.act;
 
+import auth.common.core.constant.UserRole;
+import auth.common.core.context.RequirePrincipalRole;
 import auth.common.core.context.UserContext;
-import web.common.core.response.base.dto.ResponseDataDTO;
 import com.zeroq.back.common.exception.LiveSpaceException;
 import com.zeroq.back.database.admin.entity.AdminSpace;
 import com.zeroq.back.database.pub.dto.CreateSpaceRequest;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import web.common.core.response.base.dto.ResponseDataDTO;
 
 @Slf4j
 @RestController
@@ -101,6 +103,7 @@ public class SpaceController {
      * POST /api/v1/spaces
      */
     @PostMapping
+    @RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseDataDTO<SpaceDTO> createSpace(
             @Valid @RequestBody CreateSpaceRequest request,
@@ -120,6 +123,7 @@ public class SpaceController {
      * PUT /api/v1/spaces/{id}
      */
     @PutMapping("/{id}")
+    @RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
     public ResponseDataDTO<SpaceDTO> updateSpace(
             @PathVariable Long id,
             @Valid @RequestBody CreateSpaceRequest request,
@@ -138,6 +142,7 @@ public class SpaceController {
      * DELETE /api/v1/spaces/{id}
      */
     @DeleteMapping("/{id}")
+    @RequirePrincipalRole(anyOf = {UserRole.MANAGER, UserRole.ADMIN})
     public ResponseDataDTO<Void> deleteSpace(@PathVariable Long id, UserContext userContext) {
         Long profileId = resolveAdminProfileId(userContext);
         log.info("Delete space request: id={}", id);
@@ -171,9 +176,6 @@ public class SpaceController {
     private Long resolveAdminProfileId(UserContext userContext) {
         if (userContext == null || !userContext.isAuthenticated()) {
             throw new LiveSpaceException.UnauthorizedException("Login required");
-        }
-        if (!userContext.isManager() && !userContext.isAdmin()) {
-            throw new LiveSpaceException.ForbiddenException("MANAGER or ADMIN role required");
         }
         if (userContext.getUserKey() == null || userContext.getUserKey().isBlank()) {
             throw new LiveSpaceException.ForbiddenException("인증 사용자 정보가 없습니다");
