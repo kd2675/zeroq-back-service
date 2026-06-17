@@ -1,9 +1,10 @@
 package com.zeroq.back.service.userlocation.act;
 
+import auth.common.core.context.RequirePrincipalRole;
 import auth.common.core.context.UserContext;
+import com.zeroq.back.common.exception.LiveSpaceException;
 import com.zeroq.back.database.pub.dto.CreateUserLocationRequest;
 import com.zeroq.back.database.pub.dto.UserLocationDTO;
-import com.zeroq.back.common.exception.LiveSpaceException;
 import com.zeroq.back.service.profile.biz.ProfileUserService;
 import com.zeroq.back.service.userlocation.biz.UserLocationService;
 import jakarta.validation.Valid;
@@ -39,6 +40,7 @@ public class UserLocationController {
      * POST /api/zeroq/v1/user-locations
      */
     @PostMapping
+    @RequirePrincipalRole
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseDataDTO<UserLocationDTO> createUserLocation(
             @Valid @RequestBody CreateUserLocationRequest request,
@@ -54,6 +56,7 @@ public class UserLocationController {
      * GET /api/zeroq/v1/user-locations/{id}
      */
     @GetMapping("/{id}")
+    @RequirePrincipalRole
     public ResponseDataDTO<UserLocationDTO> getUserLocationById(
             @PathVariable Long id,
             UserContext userContext) {
@@ -68,6 +71,7 @@ public class UserLocationController {
      * GET /api/zeroq/v1/user-locations/me
      */
     @GetMapping("/me")
+    @RequirePrincipalRole
     public ResponseDataDTO<Page<UserLocationDTO>> getMyLocations(
             UserContext userContext,
             @PageableDefault(size = 20, sort = "visitedAt", direction = Sort.Direction.DESC)
@@ -83,6 +87,7 @@ public class UserLocationController {
      * GET /api/zeroq/v1/user-locations/me/space/{spaceId}
      */
     @GetMapping("/me/space/{spaceId}")
+    @RequirePrincipalRole
     public ResponseDataDTO<List<UserLocationDTO>> getMyVisitsToSpace(
             UserContext userContext,
             @PathVariable Long spaceId) {
@@ -97,6 +102,7 @@ public class UserLocationController {
      * GET /api/zeroq/v1/user-locations/me/after?startTime=2024-01-01T00:00:00
      */
     @GetMapping("/me/after")
+    @RequirePrincipalRole
     public ResponseDataDTO<List<UserLocationDTO>> getMyLocationsAfter(
             UserContext userContext,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime) {
@@ -120,9 +126,6 @@ public class UserLocationController {
     private Long resolveProfileId(UserContext userContext) {
         if (userContext == null || !userContext.isAuthenticated()) {
             throw new LiveSpaceException.UnauthorizedException("Login required");
-        }
-        if (!userContext.isUser()) {
-            throw new LiveSpaceException.ForbiddenException("USER role required");
         }
         if (userContext.getUserKey() == null || userContext.getUserKey().isBlank()) {
             throw new LiveSpaceException.ForbiddenException("인증 사용자 정보가 없습니다");

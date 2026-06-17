@@ -1,5 +1,6 @@
 package com.zeroq.back.service.profile.act;
 
+import auth.common.core.context.RequirePrincipalRole;
 import auth.common.core.context.UserContext;
 import com.zeroq.back.common.exception.LiveSpaceException;
 import com.zeroq.back.service.profile.biz.ProfileUserService;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.util.StringUtils;
 import web.common.core.response.base.dto.ResponseDataDTO;
 
+@RequirePrincipalRole
 @RestController
 @RequestMapping("/api/zeroq/v1/profile")
 @RequiredArgsConstructor
@@ -20,7 +22,6 @@ public class ProfileController {
 
     @GetMapping("/summary")
     public ResponseDataDTO<ProfileSummaryResponse> getProfileSummary(UserContext userContext) {
-        requireUserRole(userContext);
         String userKey = requireUserKey(userContext);
         return ResponseDataDTO.of(
                 profileUserService.getProfileSummary(userKey),
@@ -30,7 +31,6 @@ public class ProfileController {
 
     @PostMapping("/initialize")
     public ResponseDataDTO<ProfileSummaryResponse> initializeProfile(UserContext userContext) {
-        requireUserRole(userContext);
         String userKey = requireUserKey(userContext);
         return ResponseDataDTO.of(
                 profileUserService.initializeProfile(userKey, userContext.getUserName()),
@@ -45,12 +45,4 @@ public class ProfileController {
         return userContext.getUserKey();
     }
 
-    private void requireUserRole(UserContext userContext) {
-        if (userContext == null || !userContext.isAuthenticated()) {
-            throw new LiveSpaceException.UnauthorizedException("Login required");
-        }
-        if (!userContext.isUser()) {
-            throw new LiveSpaceException.ForbiddenException("USER role required");
-        }
-    }
 }

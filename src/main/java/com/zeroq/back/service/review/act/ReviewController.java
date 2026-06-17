@@ -1,7 +1,7 @@
 package com.zeroq.back.service.review.act;
 
+import auth.common.core.context.RequirePrincipalRole;
 import auth.common.core.context.UserContext;
-import web.common.core.response.base.dto.ResponseDataDTO;
 import com.zeroq.back.common.exception.LiveSpaceException;
 import com.zeroq.back.database.pub.dto.ReviewDTO;
 import com.zeroq.back.database.pub.entity.Review;
@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import web.common.core.response.base.dto.ResponseDataDTO;
 
 @Slf4j
 @RestController
@@ -77,6 +78,7 @@ public class ReviewController {
      * POST /api/v1/reviews/spaces/{spaceId}
      */
     @PostMapping("/spaces/{spaceId}")
+    @RequirePrincipalRole
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseDataDTO<ReviewDTO> createReview(
             @PathVariable Long spaceId,
@@ -98,6 +100,7 @@ public class ReviewController {
      * DELETE /api/v1/reviews/{reviewId}
      */
     @DeleteMapping("/{reviewId}")
+    @RequirePrincipalRole
     public ResponseDataDTO<Void> deleteReview(
             @PathVariable Long reviewId,
             UserContext userContext) {
@@ -125,9 +128,6 @@ public class ReviewController {
     private Long resolveProfileId(UserContext userContext) {
         if (userContext == null || !userContext.isAuthenticated()) {
             throw new LiveSpaceException.UnauthorizedException("Login required");
-        }
-        if (!userContext.isUser()) {
-            throw new LiveSpaceException.ForbiddenException("USER role required");
         }
         if (userContext.getUserKey() == null || userContext.getUserKey().isBlank()) {
             throw new LiveSpaceException.ForbiddenException("인증 사용자 정보가 없습니다");
